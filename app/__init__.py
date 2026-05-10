@@ -6,6 +6,9 @@ from flask_wtf.csrf import CSRFProtect
 from config import config
 import click
 import os
+from datetime import date, datetime
+from sqlalchemy import inspect, text
+from app.utils.rate_limiter import limiter
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -22,6 +25,34 @@ def create_app(config_name=None):
     app = Flask(__name__, 
                 template_folder='templates',
                 static_folder='static')
+
+    @app.template_filter('indian_date')
+    def indian_date(value):
+        if not value:
+            return ''
+
+        if isinstance(value, str):
+            try:
+                value = datetime.fromisoformat(value)
+            except ValueError:
+                return value
+
+        if isinstance(value, datetime):
+            value = value.date()
+
+        if isinstance(value, date):
+            return value.strftime('%d/%m/%Y')
+
+        return str(value)
+
+    @app.template_filter('indian_currency')
+    def indian_currency(value):
+        try:
+            amount = float(value or 0)
+        except (TypeError, ValueError):
+            amount = 0.0
+
+        return f"₹{amount:,.2f}"
     
     # Load configuration
     app.config.from_object(config.get(config_name, config['default']))
@@ -31,6 +62,7 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     csrf.init_app(app)
+    limiter.init_app(app)
     
     # Configure login manager
     login_manager.login_view = 'auth.login'
@@ -98,5 +130,15 @@ def create_app(config_name=None):
         from app.models.share import SharedLink  # noqa: F401
         from app.models.interaction import Like, Comment  # noqa: F401
         db.create_all()
+
+        inspector = inspect(db.engine)
+        user_columns = {column["name"] for column in inspector.get_columns("users")}
+        if "is_admin" not in user_columns:
+            db.session.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT 0"
+                )
+            )
+            db.session.commit()
     
     return app

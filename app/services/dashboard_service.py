@@ -4,6 +4,7 @@ from app.models.trip import Trip
 from app.models.user import User
 from app import db
 from datetime import datetime
+from sqlalchemy import func
 
 
 class DashboardService:
@@ -25,12 +26,14 @@ class DashboardService:
     
     @staticmethod
     def get_user_trips(user_id, limit=10, offset=0):
-        """Get all trips for a user with pagination"""
-        trips = Trip.query.filter_by(user_id=user_id)\
-            .order_by(Trip.start_date.desc())\
-            .limit(limit)\
-            .offset(offset)\
+        """Get all trips for a user with pagination."""
+        trips = (
+            Trip.query.filter_by(user_id=user_id)
+            .order_by(Trip.start_date.desc())
+            .limit(limit)
+            .offset(offset)
             .all()
+        )
         
         return [trip.to_dict() for trip in trips]
     
@@ -44,8 +47,8 @@ class DashboardService:
     
     @staticmethod
     def get_trip_count(user_id):
-        """Get total trip count for a user"""
-        return Trip.query.filter_by(user_id=user_id).count()
+        """Get total trip count for a user."""
+        return db.session.query(func.count(Trip.id)).filter_by(user_id=user_id).scalar() or 0
     
     @staticmethod
     def get_active_trips(user_id):
@@ -71,14 +74,14 @@ class DashboardService:
     
     @staticmethod
     def get_dashboard_stats(user_id):
-        """Get dashboard statistics for a user"""
+        """Get dashboard statistics for a user."""
         all_trips = Trip.query.filter_by(user_id=user_id).all()
         total_trips = len(all_trips)
         total_budget = sum(trip.budget for trip in all_trips) if all_trips else 0
-        
+
         today = datetime.utcnow().date()
-        active_trips = [t for t in all_trips if t.end_date >= today]
-        
+        active_trips = [trip for trip in all_trips if trip.end_date >= today]
+
         return {
             'total_trips': total_trips,
             'active_trips': len(active_trips),

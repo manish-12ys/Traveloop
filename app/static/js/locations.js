@@ -8,6 +8,7 @@ class LocationManager {
         this.map = null;
         this.markers = [];
         this.searchTimeout = null;
+        this.pendingStops = null;
         this.init();
     }
 
@@ -21,23 +22,60 @@ class LocationManager {
         const mapContainer = document.getElementById('map');
         if (!mapContainer) return;
 
-        this.map = L.map('map', {
-            zoomControl: false,
-            scrollWheelZoom: true
-        }).setView([20, 0], 2);
+        const mountMap = () => {
+            if (this.map) {
+                this.map.invalidateSize();
+                if (this.pendingStops) {
+                    const stopsToRender = this.pendingStops;
+                    this.pendingStops = null;
+                    this.renderStopsOnMap(stopsToRender);
+                }
+                return;
+            }
 
-        // CartoDB Dark Matter tiles for a premium dark look
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
-        }).addTo(this.map);
+            this.map = L.map('map', {
+                zoomControl: false,
+                scrollWheelZoom: true
+            }).setView([20, 0], 2);
 
-        // Add zoom control to bottom right
-        L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+            // CartoDB Dark Matter tiles for a premium dark look
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(this.map);
 
-        // Refresh size after a short delay to ensure container is fully rendered
-        setTimeout(() => this.map.invalidateSize(), 500);
+            // Add zoom control to bottom right
+            L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+
+            // Refresh size after a short delay to ensure container is fully rendered
+            setTimeout(() => this.map.invalidateSize(), 250);
+
+            if (this.pendingStops) {
+                const stopsToRender = this.pendingStops;
+                this.pendingStops = null;
+                setTimeout(() => this.renderStopsOnMap(stopsToRender), 0);
+            }
+        };
+
+        if (mapContainer.offsetParent === null) {
+            const observer = new MutationObserver(() => {
+                if (mapContainer.offsetParent !== null) {
+                    observer.disconnect();
+                    mountMap();
+                }
+            });
+
+            observer.observe(mapContainer.closest('#itinerary') || document.body, {
+                attributes: true,
+                attributeFilter: ['class', 'style']
+            });
+
+            this._mapObserver = observer;
+            return;
+        }
+
+        mountMap();
     }
 
     setupEventListeners() {
@@ -69,9 +107,21 @@ class LocationManager {
         if (itineraryTab) {
             itineraryTab.addEventListener('click', () => {
                 setTimeout(() => {
-                    if (this.map) this.map.invalidateSize();
+                    if (this.map) {
+                        this.map.invalidateSize();
+                    } else {
+                        this.initMap();
+                    }
                 }, 100);
             });
+        }
+    }
+
+    refreshMap() {
+        if (this.map) {
+            setTimeout(() => this.map.invalidateSize(), 50);
+        } else {
+            this.initMap();
         }
     }
 
@@ -159,7 +209,7 @@ class LocationManager {
         container.innerHTML = attractions.length === 0 
             ? '<p class="text-gray-500 text-sm">No attractions found in this area.</p>'
             : attractions.map(attr => `
-                <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 flex justify-between items-center mb-2">
+                <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 flex justify-between items-center">
                     <div>
                         <h4 class="text-sm font-bold dark:text-white">${attr.name}</h4>
                         <p class="text-xs text-gray-400">${attr.kinds.split(',')[0].replace(/_/g, ' ')}</p>
@@ -185,7 +235,11 @@ class LocationManager {
     }
 
     renderStopsOnMap(stops) {
-        if (!this.map) return;
+        if (!this.map) {
+            this.pendingStops = Array.isArray(stops) ? stops : [];
+            this.initMap();
+            return;
+        }
         this.clearMarkers();
         
         const coords = [];
@@ -204,7 +258,11 @@ class LocationManager {
             // Fit bounds
             const bounds = L.latLngBounds(coords);
             this.map.fitBounds(bounds, {padding: [50, 50]});
+        } else {
+            this.map.setView([20, 0], 2);
         }
+
+        this.map.invalidateSize();
     }
 
     clearMarkers() {
@@ -213,15 +271,16 @@ class LocationManager {
     }
 
     async addAttractionAsActivity(attr) {
-        // This helper will open the activity modal with pre-filled data
-        document.getElementById('activity-title').value = attr.name;
-        document.getElementById('activity-desc').value = `Type: ${attr.kinds.replace(/_/g, ' ')}`;
-        // We'll need to know which stop to add it to, or just prompt
-        alert('Please select a stop in the itinerary to add this activity to.');
-        
-        // In a real app, we'd have a dropdown to pick a stop or default to the "active" stop
-        // For now, let's just pre-fill the form and wait for the user to pick a stop
-        openModal('activity-modal');
+        const stopName = document.getElementById('stop-name');
+        const stopLocation = document.getElementById('stop-location');
+
+        if (!stopName || !stopLocation) return;
+
+        stopName.value = attr.name;
+        stopLocation.value = attr.name;
+
+        // Open the stop modal so the attraction is added as a stop in the itinerary.
+        openModal('stop-modal');
     }
 }
 

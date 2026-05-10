@@ -223,6 +223,17 @@ const DateHelper = {
         return `${p.day}/${p.month}/${p.year}`;
     },
 
+    formatShort(date) {
+        if (!date) return '';
+        const d = new Date(date);
+        if (isNaN(d)) return '';
+        return new Intl.DateTimeFormat('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        }).format(d);
+    },
+
     formatDateTime(date) {
         if (!date) return '';
         const d = new Date(date);
@@ -233,6 +244,17 @@ const DateHelper = {
         const hours = String(d.getHours()).padStart(2, '0');
         const minutes = String(d.getMinutes()).padStart(2, '0');
         return `${day}/${month}/${year} ${hours}:${minutes}`;
+    },
+
+    formatDateOnly(date) {
+        return this.format(date);
+    },
+
+    formatInputDate(date) {
+        if (!date) return '';
+        const d = new Date(date);
+        if (isNaN(d)) return '';
+        return new Intl.DateTimeFormat('en-CA').format(d);
     },
 
     getRelativeTime(date) {
@@ -246,6 +268,28 @@ const DateHelper = {
         if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
         
         return this.format(date);
+    }
+};
+
+// Currency Helper
+const CurrencyHelper = {
+    format(amount, options = {}) {
+        const value = Number(amount) || 0;
+        try {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: options.maximumFractionDigits ?? 2,
+                minimumFractionDigits: options.minimumFractionDigits ?? 0
+            }).format(value);
+        } catch (error) {
+            return `₹${value.toLocaleString('en-IN', { maximumFractionDigits: options.maximumFractionDigits ?? 2 })}`;
+        }
+    },
+
+    formatNumber(amount) {
+        const value = Number(amount) || 0;
+        return value.toLocaleString('en-IN');
     }
 };
 

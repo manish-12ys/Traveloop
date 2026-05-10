@@ -4,212 +4,263 @@
 
 {% block extra_css %}
 <style>
-    /* Custom scrollbar for timeline */
     .timeline-container::-webkit-scrollbar { width: 6px; }
     .timeline-container::-webkit-scrollbar-track { background: transparent; }
-    .timeline-container::-webkit-scrollbar-thumb { background-color: #e2e8f0; border-radius: 20px; }
+    .timeline-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 9999px; }
     .dark .timeline-container::-webkit-scrollbar-thumb { background-color: #334155; }
+
     .drag-ghost { opacity: 0.5; background-color: #f8fafc; border: 2px dashed #cbd5e1; }
     .dark .drag-ghost { background-color: #1e293b; border-color: #475569; }
-    #map { background-color: #0f172a; } /* Matches dark mode bg */
+
+    #map {
+        min-height: 34rem;
+        width: 100%;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.92));
+    }
+
+    .workspace-panel {
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(14px);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .dark .workspace-panel {
+        background: rgba(15, 23, 42, 0.74);
+        border-color: rgba(148, 163, 184, 0.12);
+    }
+
+    .metric-value {
+        letter-spacing: -0.03em;
+    }
+
+    .tab-btn.is-active {
+        background: #0284c7;
+        color: #fff;
+        box-shadow: 0 12px 30px rgba(2, 132, 199, 0.22);
+    }
+
     .search-spinner { pointer-events: none; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto" id="trip-app" data-trip-id="{{ trip_id }}">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white mb-2" id="trip-title">Loading Trip...</h1>
-        <p class="text-gray-500 dark:text-gray-400" id="trip-dates"><i class="far fa-calendar mr-2"></i><span></span></p>
-    </div>
+<div class="relative overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_38%),radial-gradient(circle_at_top_right,rgba(251,146,60,0.12),transparent_34%)]"></div>
 
-    <!-- Tabs -->
-    <div class="mb-8 border-b border-gray-200 dark:border-gray-800">
-        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="trip-tabs" data-tabs-toggle="#trip-tab-content" role="tablist">
-            <li class="mr-2" role="presentation">
-                <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-violet-600 hover:border-violet-600 dark:hover:text-violet-400" id="itinerary-tab" data-tabs-target="#itinerary" type="button" role="tab" aria-controls="itinerary" aria-selected="true">
-                    <i class="fas fa-map-marked-alt mr-2"></i> Itinerary
-                </button>
-            </li>
-            <li class="mr-2" role="presentation">
-                <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-violet-600 hover:border-violet-600 dark:hover:text-violet-400" id="budget-tab" data-tabs-target="#budget" type="button" role="tab" aria-controls="budget" aria-selected="false">
-                    <i class="fas fa-wallet mr-2"></i> Budget
-                </button>
-            </li>
-            <li class="mr-2" role="presentation">
-                <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-violet-600 hover:border-violet-600 dark:hover:text-violet-400" id="packing-tab" data-tabs-target="#packing" type="button" role="tab" aria-controls="packing" aria-selected="false">
-                    <i class="fas fa-suitcase mr-2"></i> Packing
-                </button>
-            </li>
-            <li role="presentation">
-                <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-violet-600 hover:border-violet-600 dark:hover:text-violet-400" id="notes-tab" data-tabs-target="#notes" type="button" role="tab" aria-controls="notes" aria-selected="false">
-                    <i class="fas fa-sticky-note mr-2"></i> Notes
-                </button>
-            </li>
-        </ul>
-    </div>
-
-    <!-- Tab Contents -->
-    <div id="trip-tab-content">
-        <!-- Itinerary Tab -->
-        <div class="hidden p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50" id="itinerary" role="tabpanel" aria-labelledby="itinerary-tab">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Timeline Column -->
-                <div class="lg:col-span-2">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-bold dark:text-white">Timeline</h2>
-                        <div class="flex gap-2">
-                            <button onclick="openShareModal()" class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-                                <i class="fas fa-share-alt mr-1"></i> Share
-                            </button>
-                            <button onclick="openStopModal()" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
-                                <i class="fas fa-plus mr-1"></i> Add Stop
-                            </button>
-                        </div>
+    <div class="relative pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto" id="trip-app" data-trip-id="{{ trip_id }}">
+        <div class="workspace-panel rounded-[2rem] p-5 sm:p-6 lg:p-8 mb-8 shadow-xl">
+            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300 text-xs font-semibold uppercase tracking-[0.18em] mb-4">
+                        Trip Workspace
                     </div>
-                    <div class="timeline-container relative border-l border-gray-200 dark:border-gray-700 ml-3" id="timeline">
-                        <!-- Timeline items injected via JS -->
-                    </div>
+                    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-gray-900 dark:text-white mb-3" id="trip-title">Loading Trip...</h1>
+                    <p class="text-gray-600 dark:text-gray-300 text-base sm:text-lg flex flex-wrap items-center gap-2" id="trip-dates"><i class="far fa-calendar mr-1"></i><span></span></p>
                 </div>
 
-                <!-- Map & Discover Column -->
-                <div class="lg:col-span-1 space-y-6">
-                    <!-- Search Box -->
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <h3 class="font-bold dark:text-white mb-3">Explore Destinations</h3>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <i class="fas fa-search text-gray-400 text-sm"></i>
-                            </div>
-                            <input type="text" id="city-search" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Search cities (e.g. Paris)">
-                            <div id="search-results" class="absolute z-50 w-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-xl mt-1 hidden max-h-60 overflow-y-auto">
-                                <!-- Results injected via JS -->
-                            </div>
-                        </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto">
+                    <div class="rounded-2xl bg-white/80 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-700/60 px-4 py-3">
+                        <p class="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Stops</p>
+                        <p class="metric-value text-2xl font-bold text-slate-900 dark:text-white" id="metric-stops">0</p>
                     </div>
-
-                    <!-- Map -->
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div id="map" class="h-64 w-full"></div>
+                    <div class="rounded-2xl bg-white/80 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-700/60 px-4 py-3">
+                        <p class="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Activities</p>
+                        <p class="metric-value text-2xl font-bold text-slate-900 dark:text-white" id="metric-activities">0</p>
                     </div>
-
-                    <!-- Attractions -->
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <h3 class="font-bold dark:text-white mb-3">Nearby Attractions</h3>
-                        <div id="attractions-container" class="space-y-2 max-h-80 overflow-y-auto pr-2">
-                            <p class="text-gray-500 text-sm italic">Search for a city to see attractions.</p>
-                        </div>
+                    <div class="rounded-2xl bg-white/80 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-700/60 px-4 py-3">
+                        <p class="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Budget</p>
+                        <p class="metric-value text-2xl font-bold text-slate-900 dark:text-white" id="metric-budget">₹0</p>
+                    </div>
+                    <div class="rounded-2xl bg-white/80 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-700/60 px-4 py-3">
+                        <p class="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Packing</p>
+                        <p class="metric-value text-2xl font-bold text-slate-900 dark:text-white" id="metric-packing">0%</p>
                     </div>
                 </div>
-            </div>
-            <!-- Empty State -->
-            <div id="itinerary-empty" class="hidden text-center py-12">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 mb-4">
-                    <i class="fas fa-route text-2xl"></i>
-                </div>
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">No stops yet</h3>
-                <p class="text-gray-500 dark:text-gray-400 mb-4">Start building your itinerary by adding a destination stop.</p>
-                <button onclick="openStopModal()" class="px-4 py-2 border border-violet-600 text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg text-sm font-medium transition-colors">
-                    Add First Stop
-                </button>
             </div>
         </div>
 
-        <!-- Budget Tab -->
-        <div class="hidden p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50" id="budget" role="tabpanel" aria-labelledby="budget-tab">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold dark:text-white">Budget & Expenses</h2>
-                <button onclick="openBudgetModal()" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
-                    <i class="fas fa-plus mr-1"></i> Add Expense
-                </button>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Budget</p>
-                    <p class="text-2xl font-bold dark:text-white" id="budget-total">₹0</p>
-                </div>
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Expenses</p>
-                    <p class="text-2xl font-bold text-amber-500" id="budget-spent">₹0</p>
-                </div>
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Remaining</p>
-                    <p class="text-2xl font-bold text-emerald-500" id="budget-remaining">₹0</p>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wider">Expense Categories</h3>
-                    <div class="h-64 flex items-center justify-center">
-                        <canvas id="budgetPieChart"></canvas>
-                    </div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wider">Budget vs Reality</h3>
-                    <div class="h-64 flex items-center justify-center">
-                        <canvas id="budgetBarChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                        <tr>
-                            <th scope="col" class="px-6 py-3">Category</th>
-                            <th scope="col" class="px-6 py-3">Description</th>
-                            <th scope="col" class="px-6 py-3 text-right">Expected</th>
-                            <th scope="col" class="px-6 py-3 text-right">Actual</th>
-                            <th scope="col" class="px-6 py-3 text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="budget-list">
-                        <!-- Budget items injected via JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Packing Tab -->
-        <div class="hidden p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50" id="packing" role="tabpanel" aria-labelledby="packing-tab">
-            <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-xl font-bold dark:text-white">Packing List</h2>
-                    <span class="text-sm font-medium text-violet-600 dark:text-violet-400" id="packing-percent">0% Packed</span>
-                </div>
-                
-                <!-- Progress Bar -->
-                <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-6">
-                    <div id="packing-progress-bar" class="bg-violet-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-                </div>
-                
-                <form id="packing-form" class="flex gap-2 mb-6">
-                    <input type="text" id="packing-input" placeholder="Add an item to pack..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required>
-                    <button type="submit" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
-                        Add
+        <div class="mb-8 rounded-[1.75rem] bg-white/85 dark:bg-slate-950/70 backdrop-blur border border-slate-200/70 dark:border-slate-800 shadow-xl overflow-hidden">
+            <ul class="flex flex-wrap gap-2 p-3 sm:p-4 border-b border-gray-200 dark:border-gray-800" id="trip-tabs" data-tabs-toggle="#trip-tab-content" role="tablist">
+                <li role="presentation">
+                    <button class="tab-btn is-active inline-flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-semibold" id="itinerary-tab" data-tabs-target="#itinerary" type="button" role="tab" aria-controls="itinerary" aria-selected="true">
+                        <i class="fas fa-map-marked-alt"></i> Itinerary
                     </button>
-                </form>
+                </li>
+                <li role="presentation">
+                    <button class="tab-btn inline-flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-semibold bg-slate-100/80 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200" id="budget-tab" data-tabs-target="#budget" type="button" role="tab" aria-controls="budget" aria-selected="false">
+                        <i class="fas fa-wallet"></i> Budget
+                    </button>
+                </li>
+                <li role="presentation">
+                    <button class="tab-btn inline-flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-semibold bg-slate-100/80 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200" id="packing-tab" data-tabs-target="#packing" type="button" role="tab" aria-controls="packing" aria-selected="false">
+                        <i class="fas fa-suitcase"></i> Packing
+                    </button>
+                </li>
+                <li role="presentation">
+                    <button class="tab-btn inline-flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-semibold bg-slate-100/80 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200" id="notes-tab" data-tabs-target="#notes" type="button" role="tab" aria-controls="notes" aria-selected="false">
+                        <i class="fas fa-sticky-note"></i> Notes
+                    </button>
+                </li>
+            </ul>
 
-                <div class="space-y-2" id="packing-list">
-                    <!-- Packing items injected via JS -->
+            <div id="trip-tab-content" class="p-4 sm:p-6">
+                <div class="hidden" id="itinerary" role="tabpanel" aria-labelledby="itinerary-tab">
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+                        <div class="xl:col-span-7 space-y-6">
+                            <div class="workspace-panel rounded-[1.75rem] p-5 sm:p-6">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                                    <div>
+                                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Timeline</h2>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Build the route, add activities, and keep each stop in order.</p>
+                                    </div>
+                                    <div class="flex gap-2 flex-wrap">
+                                        <button onclick="openShareModal()" class="px-4 py-2.5 bg-white dark:bg-slate-900/80 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                                            <i class="fas fa-share-alt mr-1"></i> Share
+                                        </button>
+                                        <button onclick="openStopModal()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-sky-600/20">
+                                            <i class="fas fa-plus mr-1"></i> Add Stop
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="timeline-container pr-1 max-h-[72vh] overflow-y-auto" id="timeline"></div>
+                            </div>
+
+                            <div id="itinerary-empty" class="hidden workspace-panel rounded-[1.75rem] p-10 text-center">
+                                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-300 mb-4">
+                                    <i class="fas fa-route text-2xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">No stops yet</h3>
+                                <p class="text-gray-500 dark:text-gray-400 mb-5 max-w-xl mx-auto">Start building the trip by adding destinations, dates, and activities. The map and timeline will update automatically as you plan.</p>
+                                <button onclick="openStopModal()" class="px-5 py-3 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-sky-600/20">Add First Stop</button>
+                            </div>
+                        </div>
+
+                        <div class="xl:col-span-5 space-y-6 xl:sticky xl:top-24">
+                            <div class="workspace-panel rounded-[1.75rem] p-5 sm:p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Map</h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Stops and attractions update in real time.</p>
+                                    </div>
+                                    <button onclick="window.locationManager?.refreshMap()" class="px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/80 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Refresh</button>
+                                </div>
+                                <div class="overflow-hidden rounded-[1.5rem] border border-slate-200 dark:border-slate-800">
+                                    <div id="map" class="w-full"></div>
+                                </div>
+                            </div>
+
+                            <div class="workspace-panel rounded-[1.75rem] p-5 sm:p-6">
+                                <h3 class="font-bold text-gray-900 dark:text-white mb-3">Explore Destinations</h3>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <i class="fas fa-search text-gray-400 text-sm"></i>
+                                    </div>
+                                    <input type="text" id="city-search" class="bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-slate-700 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-sky-500 focus:border-sky-500 block w-full pl-10 pr-10 py-3" placeholder="Search cities (e.g. Jaipur)">
+                                </div>
+                                <div id="search-results" class="mt-3 hidden bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-56 overflow-y-auto"></div>
+                            </div>
+
+                            <div class="workspace-panel rounded-[1.75rem] p-5 sm:p-6">
+                                <h3 class="font-bold text-gray-900 dark:text-white mb-3">Nearby Attractions</h3>
+                                <div id="attractions-container" class="space-y-2 max-h-72 overflow-y-auto pr-2">
+                                    <p class="text-gray-500 dark:text-gray-400 text-sm italic">Search for a city to see attractions.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Notes Tab -->
-        <div class="hidden p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50" id="notes" role="tabpanel" aria-labelledby="notes-tab">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold dark:text-white">Trip Notes</h2>
-                <button onclick="openNoteModal()" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
-                    <i class="fas fa-plus mr-1"></i> Add Note
-                </button>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="notes-list">
-                <!-- Notes injected via JS -->
+                <div class="hidden p-4 rounded-[1.5rem] bg-gray-50 dark:bg-gray-900/50" id="budget" role="tabpanel" aria-labelledby="budget-tab">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold dark:text-white">Budget & Expenses</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Track planned versus actual spend in rupees.</p>
+                        </div>
+                        <button onclick="openBudgetModal()" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
+                            <i class="fas fa-plus mr-1"></i> Add Expense
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Total Budget</p>
+                            <p class="text-2xl font-bold dark:text-white" id="budget-total">₹0</p>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Total Expenses</p>
+                            <p class="text-2xl font-bold text-amber-500" id="budget-spent">₹0</p>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Remaining</p>
+                            <p class="text-2xl font-bold text-emerald-500" id="budget-remaining">₹0</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wider">Expense Categories</h3>
+                            <div class="h-64 flex items-center justify-center">
+                                <canvas id="budgetPieChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wider">Budget vs Reality</h3>
+                            <div class="h-64 flex items-center justify-center">
+                                <canvas id="budgetBarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Category</th>
+                                    <th scope="col" class="px-6 py-3">Description</th>
+                                    <th scope="col" class="px-6 py-3 text-right">Expected</th>
+                                    <th scope="col" class="px-6 py-3 text-right">Actual</th>
+                                    <th scope="col" class="px-6 py-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="budget-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="hidden p-4 rounded-[1.5rem] bg-gray-50 dark:bg-gray-900/50" id="packing" role="tabpanel" aria-labelledby="packing-tab">
+                    <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div class="flex justify-between items-center mb-2">
+                            <h2 class="text-xl font-bold dark:text-white">Packing List</h2>
+                            <span class="text-sm font-medium text-violet-600 dark:text-violet-400" id="packing-percent">0% Packed</span>
+                        </div>
+
+                        <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-6">
+                            <div id="packing-progress-bar" class="bg-violet-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+
+                        <form id="packing-form" class="flex gap-2 mb-6">
+                            <input type="text" id="packing-input" placeholder="Add an item to pack..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required>
+                            <button type="submit" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">Add</button>
+                        </form>
+
+                        <div class="space-y-2" id="packing-list"></div>
+                    </div>
+                </div>
+
+                <div class="hidden p-4 rounded-[1.5rem] bg-gray-50 dark:bg-gray-900/50" id="notes" role="tabpanel" aria-labelledby="notes-tab">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold dark:text-white">Trip Notes</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Keep reminders, confirmations, and ideas in one place.</p>
+                        </div>
+                        <button onclick="openNoteModal()" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
+                            <i class="fas fa-plus mr-1"></i> Add Note
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="notes-list"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -266,6 +317,10 @@
                 <form id="activity-form">
                     <input type="hidden" id="activity-stop-id">
                     <div class="mb-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Attach to Stop</label>
+                        <select id="activity-stop-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></select>
+                    </div>
+                    <div class="mb-4">
                         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Title</label>
                         <input type="text" id="activity-title" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
                     </div>
@@ -282,10 +337,6 @@
                             <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">End Time</label>
                             <input type="datetime-local" id="activity-end" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         </div>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cost (₹)</label>
-                        <input type="number" step="0.01" id="activity-cost" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     </div>
                     <button type="submit" class="w-full text-white bg-violet-600 hover:bg-violet-700 focus:ring-4 focus:outline-none focus:ring-violet-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-violet-600 dark:hover:bg-violet-700">Save Activity</button>
                 </form>
@@ -365,56 +416,55 @@
     </div>
 </div>
 
-    <!-- Share Modal -->
-    <div id="share-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-        <div class="relative p-4 w-full max-w-md max-h-full">
-            <div class="relative bg-white rounded-2xl shadow dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-                <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-700">
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">Share Itinerary</h3>
-                    <button type="button" onclick="closeModal('share-modal')" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-                        <i class="fas fa-times"></i>
+<!-- Share Modal -->
+<div id="share-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="relative p-4 w-full max-w-md max-h-full">
+        <div class="relative bg-white rounded-2xl shadow dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+            <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-700">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Share Itinerary</h3>
+                <button type="button" onclick="closeModal('share-modal')" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4 md:p-5">
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Anyone with this link will be able to view your trip itinerary in read-only mode.</p>
+
+                <div id="share-inactive-state" class="hidden">
+                    <button onclick="generateShareLink()" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-link"></i> Generate Public Link
                     </button>
                 </div>
-                <div class="p-4 md:p-5">
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Anyone with this link will be able to view your trip itinerary in read-only mode.</p>
-                    
-                    <div id="share-inactive-state" class="hidden">
-                        <button onclick="generateShareLink()" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
-                            <i class="fas fa-link"></i> Generate Public Link
-                        </button>
+
+                <div id="share-active-state" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Public URL</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="share-url-input" readonly class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+                            <button onclick="copyShareLink()" class="p-2.5 bg-violet-100 text-violet-600 rounded-xl hover:bg-violet-200 transition-colors">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-4 border-t dark:border-gray-700">
+                        <div>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white block">Link Status</span>
+                            <span class="text-xs text-gray-500">Enable read-only link</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="share-active-toggle" onchange="toggleShareStatus(this.checked)" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 dark:peer-focus:ring-violet-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-violet-600"></div>
+                        </label>
                     </div>
 
-                    <div id="share-active-state" class="hidden space-y-4">
+                    <div class="flex items-center justify-between pt-4 border-t dark:border-gray-700">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Public URL</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="share-url-input" readonly class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
-                                <button onclick="copyShareLink()" class="p-2.5 bg-violet-100 text-violet-600 rounded-xl hover:bg-violet-200 transition-colors">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </div>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white block">Community Feed</span>
+                            <span class="text-xs text-gray-500">Show in public discovery</span>
                         </div>
-                        <div class="flex items-center justify-between pt-4 border-t dark:border-gray-700">
-                            <div>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white block">Link Status</span>
-                                <span class="text-xs text-gray-500">Enable read-only link</span>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="share-active-toggle" onchange="toggleShareStatus(this.checked)" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 dark:peer-focus:ring-violet-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-violet-600"></div>
-                            </label>
-                        </div>
-
-                        <div class="flex items-center justify-between pt-4 border-t dark:border-gray-700">
-                            <div>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white block">Community Feed</span>
-                                <span class="text-xs text-gray-500">Show in public discovery</span>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="trip-public-toggle" onchange="togglePublicStatus(this.checked)" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 dark:peer-focus:ring-violet-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-violet-600"></div>
-                            </label>
-                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="trip-public-toggle" onchange="togglePublicStatus(this.checked)" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 dark:peer-focus:ring-violet-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-violet-600"></div>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -424,7 +474,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- SortableJS for drag & drop -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script src="{{ url_for('static', filename='js/trip.js') }}"></script>
 <script src="{{ url_for('static', filename='js/locations.js') }}"></script>

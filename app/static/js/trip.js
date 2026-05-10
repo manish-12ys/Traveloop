@@ -3,6 +3,34 @@
  */
 
 const tripId = document.getElementById('trip-app')?.dataset.tripId;
+const tripState = {
+    stops: 0,
+    activities: 0,
+    budget: 0,
+    packingPercent: 0,
+    stopsData: [],
+};
+
+function refreshTripMap() {
+    if (!window.locationManager?.refreshMap) return;
+    window.setTimeout(() => window.locationManager.refreshMap(), 150);
+}
+
+function updateTripMetrics(partial = {}) {
+    Object.assign(tripState, partial);
+
+    const metrics = {
+        'metric-stops': tripState.stops,
+        'metric-activities': tripState.activities,
+        'metric-budget': CurrencyHelper.format(tripState.budget || 0),
+        'metric-packing': `${tripState.packingPercent || 0}%`,
+    };
+
+    Object.entries(metrics).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!tripId) return;
@@ -20,6 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('packing-form').addEventListener('submit', handlePackingSubmit);
     document.getElementById('budget-form')?.addEventListener('submit', handleBudgetSubmit);
     document.getElementById('note-form')?.addEventListener('submit', handleNoteSubmit);
+
+    document.getElementById('itinerary-tab')?.addEventListener('click', refreshTripMap);
+    window.addEventListener('resize', refreshTripMap);
 });
 
 // --- UI Helpers ---
@@ -40,7 +71,37 @@ function openStopModal() {
 
 function openActivityModal(stopId) {
     document.getElementById('activity-stop-id').value = stopId;
+    const stopSelect = document.getElementById('activity-stop-select');
+    if (stopSelect) stopSelect.value = String(stopId);
     openModal('activity-modal');
+}
+
+function populateActivityStopSelect(stops) {
+    const select = document.getElementById('activity-stop-select');
+    const hiddenStopId = document.getElementById('activity-stop-id');
+    if (!select) return;
+
+    if (!Array.isArray(stops) || stops.length === 0) {
+        select.innerHTML = '<option value="">Add a stop first</option>';
+        select.disabled = true;
+        if (hiddenStopId) hiddenStopId.value = '';
+        return;
+    }
+
+    select.disabled = false;
+    select.innerHTML = stops.map(stop => `<option value="${stop.id}">${stop.name} (${stop.location})</option>`).join('');
+
+    const existingValue = hiddenStopId?.value || '';
+    const fallbackValue = existingValue && stops.some(stop => String(stop.id) === String(existingValue))
+        ? String(existingValue)
+        : String(stops[0].id);
+
+    select.value = fallbackValue;
+    if (hiddenStopId) hiddenStopId.value = fallbackValue;
+
+    select.onchange = () => {
+        if (hiddenStopId) hiddenStopId.value = select.value;
+    };
 }
 
 // --- Data Loading ---
@@ -54,6 +115,7 @@ async function loadTripDetails() {
         const start = DateHelper.format(trip.start_date);
         const end = DateHelper.format(trip.end_date);
         document.getElementById('trip-dates').innerHTML = `<i class="far fa-calendar mr-2"></i><span>${start} - ${end}</span>`;
+        updateTripMetrics({ budget: Number(trip.budget) || 0 });
     } catch (e) {
         Notify.error('Failed to load trip details');
     }
@@ -73,9 +135,16 @@ async function loadItinerary() {
         const weather = await weatherRes.json();
         const travelTimes = await travelRes.json();
         
+        tripState.stopsData = Array.isArray(stops) ? stops : [];
+        populateActivityStopSelect(tripState.stopsData);
         renderItinerary(stops, activities, weather, travelTimes);
+        updateTripMetrics({
+            stops: Array.isArray(stops) ? stops.length : 0,
+            activities: Array.isArray(activities) ? activities.length : 0,
+        });
         if (window.locationManager) {
             window.locationManager.renderStopsOnMap(stops);
+            refreshTripMap();
         }
     } catch (e) {
         Notify.error('Failed to load itinerary');
@@ -103,7 +172,7 @@ function renderItinerary(stops, activities, weather = {}, travelTimes = []) {
         if (stopWeather.length > 0) {
             const forecast = stopWeather[0]; // Just show the first one as summary
             weatherHtml = `
-                <div class="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-1 rounded-full border border-gray-100 dark:border-gray-700 shadow-sm text-xs mt-2">
+                <div class="inline-flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 px-3 py-1 rounded-full border border-gray-200/80 dark:border-gray-700 text-xs mt-2">
                     <img src="https://openweathermap.org/img/wn/${forecast.icon}.png" class="w-6 h-6" alt="weather">
                     <span class="font-bold dark:text-white">${Math.round(forecast.temp)}°C</span>
                     <span class="text-gray-400 capitalize">${forecast.description}</span>
@@ -112,43 +181,43 @@ function renderItinerary(stops, activities, weather = {}, travelTimes = []) {
         }
 
         const stopEl = document.createElement('div');
-        stopEl.className = 'mb-10 ml-6 relative';
+        stopEl.className = 'mb-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-white/70 dark:bg-slate-900/45 p-4 sm:p-5';
         stopEl.innerHTML = `
-            <span class="absolute flex items-center justify-center w-8 h-8 bg-violet-100 rounded-full -left-4 ring-4 ring-white dark:ring-gray-900 dark:bg-violet-900 text-violet-600 dark:text-violet-400">
-                <i class="fas fa-map-marker-alt text-sm"></i>
-            </span>
-            <div class="flex justify-between items-start mb-2">
+            <div class="flex justify-between items-start gap-3 mb-3">
                 <div>
-                    <h3 class="flex items-center text-lg font-bold text-gray-900 dark:text-white">${stop.name} <span class="text-sm font-normal text-gray-500 ml-2">(${stop.location})</span></h3>
-                    <time class="block mb-2 text-sm font-normal leading-none text-gray-400 dark:text-gray-500">${DateHelper.format(stop.arrival_date)} to ${DateHelper.format(stop.departure_date)}</time>
+                    <h3 class="flex flex-wrap items-center gap-x-2 text-lg font-bold text-gray-900 dark:text-white">
+                        <i class="fas fa-map-marker-alt text-sky-500"></i>
+                        <span>${stop.name}</span>
+                        <span class="text-sm font-normal text-gray-500">(${stop.location})</span>
+                    </h3>
+                    <time class="block mt-1 text-sm font-normal leading-none text-gray-500 dark:text-gray-400">${DateHelper.format(stop.arrival_date)} to ${DateHelper.format(stop.departure_date)}</time>
                     ${weatherHtml}
                 </div>
-                <button onclick="openActivityModal(${stop.id})" class="text-xs bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <button onclick="openActivityModal(${stop.id})" class="shrink-0 text-xs bg-white/80 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700">
                     <i class="fas fa-plus mr-1"></i> Activity
                 </button>
             </div>
             
-            <div class="activities-list space-y-3 mt-4" data-stop-id="${stop.id}">
+            <div class="activities-list space-y-2 mt-3" data-stop-id="${stop.id}">
                 ${stopActs.map(act => `
-                    <div class="activity-item bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4 cursor-move" data-id="${act.id}">
-                        <div class="flex flex-col items-center justify-center text-gray-400">
+                    <div class="activity-item bg-white/85 dark:bg-gray-800 p-3 rounded-lg border border-gray-200/80 dark:border-gray-700 flex items-start gap-3 cursor-move" data-id="${act.id}">
+                        <div class="flex flex-col items-center justify-center text-gray-400 mt-1">
                             <i class="fas fa-grip-vertical"></i>
                         </div>
                         <div class="flex-1">
-                            <div class="flex justify-between">
-                                <h4 class="font-bold text-gray-900 dark:text-white">${act.title}</h4>
-                                ${act.cost ? `<span class="text-emerald-500 font-medium">₹${act.cost.toLocaleString('en-IN')}</span>` : ''}
+                            <div class="flex items-start justify-between gap-3">
+                                <h4 class="font-semibold text-gray-900 dark:text-white leading-5">${act.title}</h4>
                             </div>
                             ${act.description ? `<p class="text-sm text-gray-500 mt-1">${act.description}</p>` : ''}
-                            ${act.start_time ? `<div class="text-xs text-gray-400 mt-2"><i class="far fa-clock mr-1"></i> ${DateHelper.formatDateTime(act.start_time)}</div>` : ''}
+                            ${act.start_time ? `<div class="text-xs text-gray-400 mt-1.5"><i class="far fa-clock mr-1"></i> ${DateHelper.formatDateTime(act.start_time)}</div>` : ''}
                         </div>
-                        <button onclick="deleteActivity(${act.id})" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                        <button onclick="deleteActivity(${act.id})" class="text-gray-400 hover:text-red-500 mt-1"><i class="fas fa-trash"></i></button>
                     </div>
                 `).join('')}
             </div>
 
             ${currentTravel ? `
-                <div class="absolute -bottom-8 left-0 flex items-center gap-2 text-xs text-gray-400 bg-gray-50 dark:bg-gray-900/50 px-2 py-1 rounded">
+                <div class="mt-3 inline-flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-slate-100/80 dark:bg-slate-800/70 px-2 py-1 rounded-md">
                     <i class="fas fa-car"></i>
                     <span>Travel to next stop: <b>${currentTravel.info.formatted_duration}</b></span>
                     <span class="text-gray-300">|</span>
@@ -217,12 +286,11 @@ async function handleActivitySubmit(e) {
     e.preventDefault();
     Loading.show('Adding activity...');
     const data = {
-        stop_id: document.getElementById('activity-stop-id').value,
+        stop_id: document.getElementById('activity-stop-select')?.value || document.getElementById('activity-stop-id').value,
         title: document.getElementById('activity-title').value,
         description: document.getElementById('activity-desc').value,
         start_time: document.getElementById('activity-start').value || null,
-        end_time: document.getElementById('activity-end').value || null,
-        cost: document.getElementById('activity-cost').value || 0
+        end_time: document.getElementById('activity-end').value || null
     };
     
     try {
@@ -285,6 +353,7 @@ async function loadPacking() {
         const percent = stats.packing.percent || 0;
         document.getElementById('packing-percent').textContent = `${percent}% Packed`;
         document.getElementById('packing-progress-bar').style.width = `${percent}%`;
+        updateTripMetrics({ packingPercent: percent });
     } catch (e) { Notify.error('Failed to load packing list'); }
 }
 
@@ -331,6 +400,9 @@ async function loadBudget() {
         const items = await itemsRes.json();
         const stats = await statsRes.json();
         if (!Array.isArray(items)) return;
+        const canonicalBudget = Number(tripState.budget) || Number(stats.budget.expected_total) || 0;
+        const totalExpenses = Number(stats.budget.actual_total) || 0;
+        const remainingBudget = canonicalBudget - totalExpenses;
         
         const list = document.getElementById('budget-list');
         list.innerHTML = items.length === 0 
@@ -339,8 +411,8 @@ async function loadBudget() {
             <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                 <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">${item.category}</td>
                 <td class="px-6 py-4">${item.description}</td>
-                <td class="px-6 py-4 text-right">₹${item.expected_amount.toLocaleString('en-IN')}</td>
-                <td class="px-6 py-4 text-right">₹${item.actual_amount.toLocaleString('en-IN')}</td>
+                <td class="px-6 py-4 text-right">${CurrencyHelper.format(item.expected_amount)}</td>
+                <td class="px-6 py-4 text-right">${CurrencyHelper.format(item.actual_amount)}</td>
                 <td class="px-6 py-4 text-right">
                     <button onclick="deleteBudget(${item.id})" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
                 </td>
@@ -349,9 +421,10 @@ async function loadBudget() {
         
         // Update summary
         const s = stats.budget;
-        document.getElementById('budget-total').textContent = `₹${s.expected_total.toLocaleString('en-IN')}`;
-        document.getElementById('budget-spent').textContent = `₹${s.actual_total.toLocaleString('en-IN')}`;
-        document.getElementById('budget-remaining').textContent = `₹${s.remaining.toLocaleString('en-IN')}`;
+        document.getElementById('budget-total').textContent = CurrencyHelper.format(canonicalBudget);
+        document.getElementById('budget-spent').textContent = CurrencyHelper.format(totalExpenses);
+        document.getElementById('budget-remaining').textContent = CurrencyHelper.format(remainingBudget);
+        updateTripMetrics({ budget: canonicalBudget });
 
         renderBudgetCharts(s);
     } catch (e) { Notify.error('Failed to load budget data'); }

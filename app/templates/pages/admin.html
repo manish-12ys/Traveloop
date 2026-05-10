@@ -115,7 +115,7 @@ async function loadOverview() {
             <div class="w-10 h-10 rounded-xl ${colors[k.color]} flex items-center justify-center mb-3">
                 <i class="fas ${k.icon}"></i>
             </div>
-            <p class="text-2xl font-extrabold text-gray-900 dark:text-white">${k.value.toLocaleString()}</p>
+            <p class="text-2xl font-extrabold text-gray-900 dark:text-white">${CurrencyHelper.formatNumber(k.value)}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">${k.label}</p>
         </div>
     `).join('');
@@ -125,8 +125,7 @@ async function loadOverview() {
 async function loadActivityChart() {
     const data = await API.get('/admin/stats/user-activity');
     const labels = data.map(d => {
-        const dt = new Date(d.date);
-        return `${dt.getMonth()+1}/${dt.getDate()}`;
+        return DateHelper.format(d.date);
     });
 
     new Chart(document.getElementById('activityChart'), {

@@ -95,8 +95,8 @@ def test_get_stats():
         stats = response.json()
         print(f"Total Trips: {stats['total_trips']}")
         print(f"Active Trips: {stats['active_trips']}")
-        print(f"Total Budget: ${stats['total_budget']}")
-        print(f"Average Budget: ${stats['average_trip_budget']}")
+        print(f"Total Budget: ₹{stats['total_budget']}")
+        print(f"Average Budget: ₹{stats['average_trip_budget']}")
         return True
     else:
         print(f"❌ Failed to get stats: {response.status_code}")
@@ -202,7 +202,7 @@ def test_update_trip(trip_id):
         print("✅ Trip updated successfully!")
         trip = response.json()
         print(f"Updated title: {trip['title']}")
-        print(f"Updated budget: ${trip['budget']}")
+        print(f"Updated budget: ₹{trip['budget']}")
         return True
     else:
         print(f"❌ Failed to update trip: {response.status_code}")

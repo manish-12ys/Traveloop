@@ -6,6 +6,7 @@ from app import db
 from app.services.trip_service import TripService
 from app.models.trip import Trip
 from datetime import datetime
+from app.utils.rate_limiter import limiter, LIMIT_NORMAL
 
 trip_api_bp = Blueprint('trip_api', __name__, url_prefix='/api/trips')
 
@@ -16,11 +17,13 @@ def verify_trip_access(trip_id):
 
 # --- Stops ---
 @trip_api_bp.route('/<int:trip_id>/stops', methods=['GET'])
+@limiter.limit(LIMIT_NORMAL)
 @login_required
 def get_stops(trip_id):
     return jsonify(TripService.get_trip_stops(trip_id, current_user.id)), 200
 
 @trip_api_bp.route('/<int:trip_id>/stops', methods=['POST'])
+@limiter.limit(LIMIT_NORMAL)
 @login_required
 def add_stop(trip_id):
     data = request.get_json()
@@ -55,11 +58,13 @@ def delete_stop(trip_id, stop_id):
 
 # --- Activities ---
 @trip_api_bp.route('/<int:trip_id>/activities', methods=['GET'])
+@limiter.limit(LIMIT_NORMAL)
 @login_required
 def get_activities(trip_id):
     return jsonify(TripService.get_trip_activities(trip_id, current_user.id)), 200
 
 @trip_api_bp.route('/<int:trip_id>/activities', methods=['POST'])
+@limiter.limit(LIMIT_NORMAL)
 @login_required
 def add_activity(trip_id):
     data = request.get_json()

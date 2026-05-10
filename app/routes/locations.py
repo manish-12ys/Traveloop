@@ -3,14 +3,15 @@ Locations API routes - Phase 4
 """
 
 from flask import Blueprint, jsonify, request
-from flask_login import login_required
+from flask_login import current_user
 from app.services.location_service import LocationService
+from app.utils.rate_limiter import limiter, LIMIT_GENEROUS
 
 locations_bp = Blueprint('locations', __name__, url_prefix='/api/locations')
 
 @locations_bp.route('/cities/autocomplete', methods=['GET'])
+@limiter.limit(LIMIT_GENEROUS)
 def autocomplete_cities():
-    from flask_login import current_user
     if not current_user.is_authenticated:
         return jsonify({'error': 'Unauthorized'}), 401
     query = request.args.get('q', '')
@@ -21,8 +22,8 @@ def autocomplete_cities():
     return jsonify(cities), 200
 
 @locations_bp.route('/attractions', methods=['GET'])
+@limiter.limit(LIMIT_GENEROUS)
 def get_attractions():
-    from flask_login import current_user
     if not current_user.is_authenticated:
         return jsonify({'error': 'Unauthorized'}), 401
     lat = request.args.get('lat', type=float)
@@ -35,8 +36,8 @@ def get_attractions():
     return jsonify(attractions), 200
 
 @locations_bp.route('/city-image', methods=['GET'])
+@limiter.limit(LIMIT_GENEROUS)
 def get_city_image():
-    from flask_login import current_user
     if not current_user.is_authenticated:
         return jsonify({'error': 'Unauthorized'}), 401
     city = request.args.get('city', '')

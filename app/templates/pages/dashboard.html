@@ -103,33 +103,6 @@
                 </div>
             </div>
 
-            <!-- Quick Stats Section -->
-            <div class="grid gap-6 md:grid-cols-2 mb-8">
-                <!-- Budget Overview -->
-                <div class="card reveal">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Budget Overview</h3>
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-600 dark:text-slate-400">Total Spent</span>
-                            <span class="font-semibold text-gray-900 dark:text-white" id="budget-spent">₹0</span>
-                        </div>
-                        <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
-                            <div id="budget-progress" class="bg-sky-500 h-2 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p class="text-sm text-gray-600 dark:text-slate-400">Budgets will be tracked once trips are
-                            created.</p>
-                    </div>
-                </div>
-
-                <!-- Recent Destinations -->
-                <div class="card reveal">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Favorite Destinations</h3>
-                    <div id="destinations-list" class="space-y-2">
-                        <p class="text-gray-600 dark:text-slate-400">Your favorite destinations will appear here.</p>
-                    </div>
-                </div>
-            </div>
-
             <!-- All Trips Section -->
             <div id="all-trips" class="mb-8">
                 <h2 class="text-2xl font-display font-bold text-gray-900 dark:text-white mb-6">All Your Trips</h2>
@@ -276,29 +249,18 @@
 
     // Format numbers as Indian Rupees and dates in Indian locale
     function formatCurrencyINR(amount) {
-        try {
-            return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount || 0);
-        } catch (e) {
-            return `₹${(amount || 0).toFixed(2)}`;
-        }
+        return CurrencyHelper.format(amount);
     }
 
     function formatDateIN(dateStr) {
-        if (!dateStr) return '';
-        const d = new Date(dateStr);
-        try {
-            return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-        } catch (e) {
-            // Fallback to ISO
-            return dateStr;
-        }
+        return DateHelper.formatShort(dateStr);
     }
 
     function updateStats(stats) {
         document.getElementById('stat-total-trips').textContent = stats.total_trips;
         document.getElementById('stat-active-trips').textContent = stats.active_trips;
-        document.getElementById('stat-total-budget').textContent = `$${stats.total_budget.toFixed(2)}`;
-        document.getElementById('stat-avg-budget').textContent = `$${stats.average_trip_budget.toFixed(2)}`;
+        document.getElementById('stat-total-budget').textContent = CurrencyHelper.format(stats.total_budget);
+        document.getElementById('stat-avg-budget').textContent = CurrencyHelper.format(stats.average_trip_budget);
     }
 
     function renderActivTrips(trips) {
@@ -332,8 +294,8 @@
     }
 
     function createTripCard(trip) {
-        const startDate = new Date(trip.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const endDate = new Date(trip.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const startDate = DateHelper.formatShort(trip.start_date);
+        const endDate = DateHelper.formatShort(trip.end_date);
 
         return `
             <a href="/trips/${trip.id}" class="card reveal block group cursor-pointer hover:shadow-lg transition-all duration-300">
@@ -352,7 +314,7 @@
                         <span><i class="far fa-calendar mr-1"></i>${startDate} - ${endDate}</span>
                     </div>
                     <div class="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-slate-800">
-                        <span class="font-semibold text-gray-900 dark:text-white">Budget: $${trip.budget.toFixed(2)}</span>
+                        <span class="font-semibold text-gray-900 dark:text-white">Budget: ${CurrencyHelper.format(trip.budget)}</span>
                         <span class="px-3 py-1 rounded-full text-xs font-medium ${trip.status === 'planning' ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'}">${trip.status}</span>
                     </div>
                 </div>

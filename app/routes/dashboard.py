@@ -4,11 +4,12 @@ from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 from app.services.dashboard_service import DashboardService
 from datetime import datetime
+from app.utils.rate_limiter import limiter, LIMIT_GENEROUS
 
 dashboard_bp = Blueprint('dashboard_api', __name__, url_prefix='/api/dashboard')
 
-
 @dashboard_bp.route('/profile', methods=['GET'])
+@limiter.limit(LIMIT_GENEROUS)
 @login_required
 def get_profile():
     """Get current user profile"""
@@ -19,6 +20,7 @@ def get_profile():
 
 
 @dashboard_bp.route('/trips', methods=['GET'])
+@limiter.limit(LIMIT_GENEROUS)
 @login_required
 def get_trips():
     """Get user's trips with pagination"""
@@ -37,6 +39,7 @@ def get_trips():
 
 
 @dashboard_bp.route('/active-trips', methods=['GET'])
+@limiter.limit(LIMIT_GENEROUS)
 @login_required
 def get_active_trips():
     """Get user's active/upcoming trips"""

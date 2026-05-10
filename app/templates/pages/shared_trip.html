@@ -14,7 +14,7 @@
                     <p class="text-violet-200 text-lg md:text-xl flex items-center gap-2">
                         <i class="fas fa-map-marker-alt"></i> {{ trip.destination }}
                         <span class="mx-2 opacity-50">•</span>
-                        <i class="far fa-calendar-alt"></i> {{ trip.start_date.strftime('%b %d') }} - {{ trip.end_date.strftime('%b %d, %Y') }}
+                        <i class="far fa-calendar-alt"></i> {{ trip.start_date|indian_date }} - {{ trip.end_date|indian_date }}
                     </p>
                 </div>
                 {% if current_user.is_authenticated %}
@@ -48,7 +48,7 @@
                         <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ stop.name }}</h3>
                         <p class="text-gray-500 text-sm mb-2">{{ stop.location }}</p>
                         <time class="text-sm font-medium text-violet-600 dark:text-violet-400">
-                            {{ stop.arrival_date.strftime('%b %d') }} - {{ stop.departure_date.strftime('%b %d') }}
+                            {{ stop.arrival_date|indian_date }} - {{ stop.departure_date|indian_date }}
                         </time>
                     </div>
                     

@@ -7,6 +7,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from app import db
 from app.models.user import User
+from app.utils.rate_limiter import limiter, LIMIT_STRICT
 
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -22,6 +23,7 @@ def _is_safe_redirect(target):
 
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
+@limiter.limit(LIMIT_STRICT)
 def signup():
     """Render signup form and create new users."""
     if current_user.is_authenticated:
@@ -73,6 +75,7 @@ def signup():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit(LIMIT_STRICT)
 def login():
     """Render login form and authenticate users."""
     if current_user.is_authenticated:
@@ -108,6 +111,7 @@ def login():
 
 
 @auth_bp.route('/admin/login', methods=['GET', 'POST'])
+@limiter.limit(LIMIT_STRICT)
 def admin_login():
     """Render admin login form and authenticate admin users."""
     if current_user.is_authenticated:
