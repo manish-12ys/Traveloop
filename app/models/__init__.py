@@ -13,8 +13,10 @@ from app.models.activity import Activity
 from app.models.budget import BudgetItem
 from app.models.packing import PackingItem
 from app.models.note import Note
+from app.models.share import SharedLink
+from app.models.interaction import Like, Comment
 
-__all__ = ['User', 'Trip', 'Stop', 'Activity', 'BudgetItem', 'PackingItem', 'Note']
+__all__ = ['User', 'Trip', 'Stop', 'Activity', 'BudgetItem', 'PackingItem', 'Note', 'SharedLink', 'Like', 'Comment']
 
 
 # Phase 1 Models

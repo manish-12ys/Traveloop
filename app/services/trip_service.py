@@ -7,17 +7,34 @@ from app.models.budget import BudgetItem
 from app.models.packing import PackingItem
 from app.models.note import Note
 from app.models.trip import Trip
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TripService:
     """Service for trip specific operations (stops, activities, budget, etc.)"""
 
+    @staticmethod
+    def _verify_ownership(trip_id, user_id):
+        """Internal helper to check if a trip belongs to a user"""
+        trip = Trip.query.filter_by(id=trip_id, user_id=user_id).first()
+        if not trip:
+            logger.warning(f"Unauthorized access attempt: user {user_id} tried to access trip {trip_id}")
+            return False
+        return True
+
     # --- Stops ---
     @staticmethod
-    def get_trip_stops(trip_id):
+    def get_trip_stops(trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return []
         return [stop.to_dict() for stop in Stop.query.filter_by(trip_id=trip_id).order_by(Stop.order).all()]
 
     @staticmethod
-    def add_stop(trip_id, name, location, arrival_date, departure_date, latitude=None, longitude=None):
+    def add_stop(trip_id, user_id, name, location, arrival_date, departure_date, latitude=None, longitude=None):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return None
+            
         # Get max order
         max_order_stop = Stop.query.filter_by(trip_id=trip_id).order_by(Stop.order.desc()).first()
         new_order = max_order_stop.order + 1 if max_order_stop else 0
@@ -37,7 +54,10 @@ class TripService:
         return stop.to_dict()
 
     @staticmethod
-    def update_stop(stop_id, trip_id, **kwargs):
+    def update_stop(stop_id, trip_id, user_id, **kwargs):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return None
+            
         stop = Stop.query.filter_by(id=stop_id, trip_id=trip_id).first()
         if not stop:
             return None
@@ -51,7 +71,10 @@ class TripService:
         return stop.to_dict()
 
     @staticmethod
-    def delete_stop(stop_id, trip_id):
+    def delete_stop(stop_id, trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return False
+            
         stop = Stop.query.filter_by(id=stop_id, trip_id=trip_id).first()
         if not stop:
             return False
@@ -61,11 +84,16 @@ class TripService:
 
     # --- Activities ---
     @staticmethod
-    def get_trip_activities(trip_id):
+    def get_trip_activities(trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return []
         return [activity.to_dict() for activity in Activity.query.filter_by(trip_id=trip_id).order_by(Activity.order).all()]
 
     @staticmethod
-    def add_activity(trip_id, title, stop_id=None, description='', start_time=None, end_time=None, cost=0.0):
+    def add_activity(trip_id, user_id, title, stop_id=None, description='', start_time=None, end_time=None, cost=0.0):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return None
+            
         max_order_activity = Activity.query.filter_by(trip_id=trip_id).order_by(Activity.order.desc()).first()
         new_order = max_order_activity.order + 1 if max_order_activity else 0
 
@@ -84,7 +112,10 @@ class TripService:
         return activity.to_dict()
 
     @staticmethod
-    def update_activity(activity_id, trip_id, **kwargs):
+    def update_activity(activity_id, trip_id, user_id, **kwargs):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return None
+            
         activity = Activity.query.filter_by(id=activity_id, trip_id=trip_id).first()
         if not activity:
             return None
@@ -98,7 +129,10 @@ class TripService:
         return activity.to_dict()
 
     @staticmethod
-    def delete_activity(activity_id, trip_id):
+    def delete_activity(activity_id, trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return False
+            
         activity = Activity.query.filter_by(id=activity_id, trip_id=trip_id).first()
         if not activity:
             return False
@@ -107,8 +141,11 @@ class TripService:
         return True
 
     @staticmethod
-    def reorder_activities(trip_id, activity_ids):
+    def reorder_activities(trip_id, user_id, activity_ids):
         """Update the order of activities based on the provided list of IDs"""
+        if not TripService._verify_ownership(trip_id, user_id):
+            return False
+            
         activities = Activity.query.filter_by(trip_id=trip_id).all()
         activity_map = {a.id: a for a in activities}
         
@@ -121,11 +158,16 @@ class TripService:
 
     # --- Budget Items ---
     @staticmethod
-    def get_trip_budget_items(trip_id):
+    def get_trip_budget_items(trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return []
         return [item.to_dict() for item in BudgetItem.query.filter_by(trip_id=trip_id).all()]
 
     @staticmethod
-    def add_budget_item(trip_id, category, description='', expected_amount=0.0, actual_amount=0.0):
+    def add_budget_item(trip_id, user_id, category, description='', expected_amount=0.0, actual_amount=0.0):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return None
+            
         item = BudgetItem(
             trip_id=trip_id,
             category=category,
@@ -138,7 +180,10 @@ class TripService:
         return item.to_dict()
 
     @staticmethod
-    def update_budget_item(item_id, trip_id, **kwargs):
+    def update_budget_item(item_id, trip_id, user_id, **kwargs):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return None
+            
         item = BudgetItem.query.filter_by(id=item_id, trip_id=trip_id).first()
         if not item:
             return None
@@ -152,7 +197,10 @@ class TripService:
         return item.to_dict()
 
     @staticmethod
-    def delete_budget_item(item_id, trip_id):
+    def delete_budget_item(item_id, trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return False
+            
         item = BudgetItem.query.filter_by(id=item_id, trip_id=trip_id).first()
         if not item:
             return False
@@ -161,7 +209,10 @@ class TripService:
         return True
 
     @staticmethod
-    def get_budget_summary(trip_id):
+    def get_budget_summary(trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return {'expected_total': 0, 'actual_total': 0, 'remaining': 0, 'categories': {}}
+            
         items = BudgetItem.query.filter_by(trip_id=trip_id).all()
         categories = {}
         expected_total = 0
@@ -181,11 +232,16 @@ class TripService:
 
     # --- Packing Items ---
     @staticmethod
-    def get_trip_packing_items(trip_id):
+    def get_trip_packing_items(trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return []
         return [item.to_dict() for item in PackingItem.query.filter_by(trip_id=trip_id).all()]
 
     @staticmethod
-    def add_packing_item(trip_id, item_name, category='General'):
+    def add_packing_item(trip_id, user_id, item_name, category='General'):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return None
+            
         item = PackingItem(
             trip_id=trip_id,
             item_name=item_name,
@@ -196,7 +252,10 @@ class TripService:
         return item.to_dict()
 
     @staticmethod
-    def toggle_packing_item(item_id, trip_id, is_packed):
+    def toggle_packing_item(item_id, trip_id, user_id, is_packed):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return None
+            
         item = PackingItem.query.filter_by(id=item_id, trip_id=trip_id).first()
         if not item:
             return None
@@ -205,7 +264,10 @@ class TripService:
         return item.to_dict()
 
     @staticmethod
-    def delete_packing_item(item_id, trip_id):
+    def delete_packing_item(item_id, trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return False
+            
         item = PackingItem.query.filter_by(id=item_id, trip_id=trip_id).first()
         if not item:
             return False
@@ -214,7 +276,10 @@ class TripService:
         return True
 
     @staticmethod
-    def get_packing_stats(trip_id):
+    def get_packing_stats(trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return {'total': 0, 'packed': 0, 'percent': 0}
+            
         items = PackingItem.query.filter_by(trip_id=trip_id).all()
         if not items:
             return {'total': 0, 'packed': 0, 'percent': 0}
@@ -228,11 +293,16 @@ class TripService:
 
     # --- Notes ---
     @staticmethod
-    def get_trip_notes(trip_id):
+    def get_trip_notes(trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return []
         return [note.to_dict() for note in Note.query.filter_by(trip_id=trip_id).all()]
 
     @staticmethod
-    def add_note(trip_id, content, title=''):
+    def add_note(trip_id, user_id, content, title=''):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return None
+            
         note = Note(
             trip_id=trip_id,
             content=content,
@@ -243,7 +313,10 @@ class TripService:
         return note.to_dict()
 
     @staticmethod
-    def update_note(note_id, trip_id, content, title=None):
+    def update_note(note_id, trip_id, user_id, content, title=None):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return None
+            
         note = Note.query.filter_by(id=note_id, trip_id=trip_id).first()
         if not note:
             return None
@@ -254,7 +327,10 @@ class TripService:
         return note.to_dict()
 
     @staticmethod
-    def delete_note(note_id, trip_id):
+    def delete_note(note_id, trip_id, user_id):
+        if not TripService._verify_ownership(trip_id, user_id):
+            return False
+            
         note = Note.query.filter_by(id=note_id, trip_id=trip_id).first()
         if not note:
             return False

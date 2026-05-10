@@ -179,6 +179,7 @@ function renderItinerary(stops, activities, weather = {}, travelTimes = []) {
 // --- Form Handlers ---
 async function handleStopSubmit(e) {
     e.preventDefault();
+    Loading.show('Saving stop...');
     const data = {
         name: document.getElementById('stop-name').value,
         location: document.getElementById('stop-location').value,
@@ -191,18 +192,30 @@ async function handleStopSubmit(e) {
     try {
         const res = await fetch(`/api/trips/${tripId}/stops`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': API._getCsrfToken()
+            },
             body: JSON.stringify(data)
         });
         if (res.ok) {
+            Notify.success('Stop added successfully!');
             closeModal('stop-modal');
             loadItinerary();
+        } else {
+            const err = await res.json();
+            Notify.error(err.error || 'Failed to add stop');
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        Notify.error('Network error. Please try again.');
+    } finally {
+        Loading.hide();
+    }
 }
 
 async function handleActivitySubmit(e) {
     e.preventDefault();
+    Loading.show('Adding activity...');
     const data = {
         stop_id: document.getElementById('activity-stop-id').value,
         title: document.getElementById('activity-title').value,
@@ -213,34 +226,38 @@ async function handleActivitySubmit(e) {
     };
     
     try {
-        const res = await fetch(`/api/trips/${tripId}/activities`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-        if (res.ok) {
-            closeModal('activity-modal');
-            loadItinerary();
-        }
-    } catch (e) { console.error(e); }
+        await API.post(`/trips/${tripId}/activities`, data);
+        Notify.success('Activity added');
+        closeModal('activity-modal');
+        loadItinerary();
+    } catch (e) { 
+        Notify.error('Failed to add activity');
+    } finally {
+        Loading.hide();
+    }
 }
 
 async function deleteActivity(id) {
     if (!confirm('Delete this activity?')) return;
+    Loading.show('Deleting...');
     try {
-        await fetch(`/api/trips/${tripId}/activities/${id}`, { method: 'DELETE' });
+        await API.delete(`/trips/${tripId}/activities/${id}`);
+        Notify.success('Activity deleted');
         loadItinerary();
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        Notify.error('Error deleting activity');
+    } finally {
+        Loading.hide();
+    }
 }
 
 async function reorderActivities(activityIds) {
     try {
-        await fetch(`/api/trips/${tripId}/activities/reorder`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ activity_ids: activityIds })
-        });
-    } catch (e) { console.error(e); }
+        await API.put(`/trips/${tripId}/activities/reorder`, { activity_ids: activityIds });
+    } catch (e) { 
+        Notify.error('Failed to save new order');
+        loadItinerary();
+    }
 }
 
 // --- Packing Logic ---
@@ -287,20 +304,17 @@ async function handlePackingSubmit(e) {
 
 async function togglePacking(id, isPacked) {
     try {
-        await fetch(`/api/trips/${tripId}/packing/${id}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ is_packed: isPacked })
-        });
-        loadPacking(); // Reload to update line-through
-    } catch (e) { console.error(e); }
+        await API.put(`/trips/${tripId}/packing/${id}`, { is_packed: isPacked });
+        loadPacking();
+    } catch (e) { Notify.error('Failed to update item'); }
 }
 
 async function deletePacking(id) {
     try {
-        await fetch(`/api/trips/${tripId}/packing/${id}`, { method: 'DELETE' });
+        await API.delete(`/trips/${tripId}/packing/${id}`);
+        Notify.success('Item removed');
         loadPacking();
-    } catch (e) { console.error(e); }
+    } catch (e) { Notify.error('Failed to remove item'); }
 }
 
 // --- Budget Logic ---
@@ -407,6 +421,7 @@ function renderBudgetCharts(stats) {
 
 async function handleBudgetSubmit(e) {
     e.preventDefault();
+    Loading.show('Saving expense...');
     const data = {
         category: document.getElementById('budget-category').value,
         description: document.getElementById('budget-desc').value,
@@ -414,30 +429,29 @@ async function handleBudgetSubmit(e) {
         actual_amount: parseFloat(document.getElementById('budget-actual').value) || 0
     };
     try {
-        const res = await fetch(`/api/trips/${tripId}/budget`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-        if (res.ok) {
-            closeModal('budget-modal');
-            loadBudget();
-        } else {
-            const err = await res.json().catch(() => ({}));
-            alert('Failed to save expense: ' + (err.error || res.statusText));
-        }
+        await API.post(`/trips/${tripId}/budget`, data);
+        Notify.success('Expense added');
+        closeModal('budget-modal');
+        loadBudget();
     } catch (e) { 
-        console.error('handleBudgetSubmit error:', e);
-        alert('Network error saving expense. Please try again.');
+        Notify.error('Failed to save expense');
+    } finally {
+        Loading.hide();
     }
 }
 
 async function deleteBudget(id) {
     if (!confirm('Delete this expense?')) return;
+    Loading.show('Deleting...');
     try {
-        await fetch(`/api/trips/${tripId}/budget/${id}`, { method: 'DELETE' });
+        await API.delete(`/trips/${tripId}/budget/${id}`);
+        Notify.success('Expense deleted');
         loadBudget();
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        Notify.error('Failed to delete expense');
+    } finally {
+        Loading.hide();
+    }
 }
 
 function openBudgetModal() { openModal('budget-modal'); }
@@ -503,3 +517,74 @@ async function deleteNote(id) {
 }
 
 function openNoteModal() { openModal('note-modal'); }
+
+// --- Sharing Logic ---
+async function openShareModal() {
+    try {
+        const data = await API.get(`/share/${tripId}`);
+        updateShareModalUI(data);
+        openModal('share-modal');
+    } catch (e) {
+        Notify.error('Failed to load sharing info');
+    }
+}
+
+function updateShareModalUI(data) {
+    const inactive = document.getElementById('share-inactive-state');
+    const active = document.getElementById('share-active-state');
+    const input = document.getElementById('share-url-input');
+    const toggle = document.getElementById('share-active-toggle');
+    const publicToggle = document.getElementById('trip-public-toggle');
+
+    if (data.token) {
+        inactive.classList.add('hidden');
+        active.classList.remove('hidden');
+        input.value = data.full_url;
+        toggle.checked = data.is_active;
+        publicToggle.checked = data.is_public;
+    } else {
+        inactive.classList.remove('hidden');
+        active.classList.add('hidden');
+    }
+}
+
+async function generateShareLink() {
+    Loading.show('Generating link...');
+    try {
+        const data = await API.get(`/share/${tripId}`);
+        updateShareModalUI(data);
+        Notify.success('Public link generated!');
+    } catch (e) {
+        Notify.error('Failed to generate link');
+    } finally {
+        Loading.hide();
+    }
+}
+
+async function toggleShareStatus(isActive) {
+    try {
+        const data = await API.post(`/share/${tripId}/toggle`, { is_active: isActive });
+        updateShareModalUI(data);
+        Notify.success(`Link ${isActive ? 'activated' : 'deactivated'}`);
+    } catch (e) {
+        Notify.error('Failed to update link status');
+        document.getElementById('share-active-toggle').checked = !isActive;
+    }
+}
+
+function copyShareLink() {
+    const input = document.getElementById('share-url-input');
+    input.select();
+    document.execCommand('copy');
+    Notify.success('Link copied to clipboard!');
+}
+
+async function togglePublicStatus(isPublic) {
+    try {
+        await API.post(`/trips/${tripId}/visibility`, { is_public: isPublic });
+        Notify.success(`Trip is now ${isPublic ? 'public' : 'private'}`);
+    } catch (e) {
+        Notify.error('Failed to update visibility');
+        document.getElementById('trip-public-toggle').checked = !isPublic;
+    }
+}

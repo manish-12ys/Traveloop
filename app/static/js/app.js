@@ -5,6 +5,10 @@ const API_BASE_URL = window.location.origin + '/api';
 
 // API Helper Functions
 const API = {
+    _getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    },
+
     async get(endpoint) {
         try {
             const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -27,6 +31,7 @@ const API = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': this._getCsrfToken()
                 },
                 body: JSON.stringify(data),
                 credentials: 'include'
@@ -44,6 +49,7 @@ const API = {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': this._getCsrfToken()
                 },
                 body: JSON.stringify(data),
                 credentials: 'include'
@@ -61,6 +67,7 @@ const API = {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': this._getCsrfToken()
                 },
                 credentials: 'include'
             });

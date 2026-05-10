@@ -32,8 +32,8 @@
                         <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg">
                             <i class="fas fa-plus mr-2"></i>Open Dashboard
                         </a>
-                        <a href="/explore" class="btn btn-outline btn-lg">
-                            <i class="fas fa-compass mr-2"></i>Explore Destinations
+                        <a href="{{ url_for('main.community') }}" class="btn btn-outline btn-lg">
+                            <i class="fas fa-compass mr-2"></i>Explore Community
                         </a>
                     {% else %}
                         <a href="{{ url_for('auth.signup') }}" class="btn btn-primary btn-lg">

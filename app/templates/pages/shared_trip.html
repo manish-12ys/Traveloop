@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ trip.title }} - Shared Itinerary | Traveloop{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Hero Section -->
+    <div class="relative h-64 md:h-96 rounded-3xl overflow-hidden mb-8 shadow-2xl">
+        <img src="{{ trip.image_url or '/static/img/default-trip.jpg' }}" alt="{{ trip.destination }}" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-8 md:p-12">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h1 class="text-3xl md:text-5xl font-extrabold text-white mb-2">{{ trip.title }}</h1>
+                    <p class="text-violet-200 text-lg md:text-xl flex items-center gap-2">
+                        <i class="fas fa-map-marker-alt"></i> {{ trip.destination }}
+                        <span class="mx-2 opacity-50">•</span>
+                        <i class="far fa-calendar-alt"></i> {{ trip.start_date.strftime('%b %d') }} - {{ trip.end_date.strftime('%b %d, %Y') }}
+                    </p>
+                </div>
+                {% if current_user.is_authenticated %}
+                <button id="clone-btn" onclick="cloneTrip('{{ token }}')" class="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105 flex items-center gap-2 shadow-lg">
+                    <i class="fas fa-copy"></i> Clone to My Trips
+                </button>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" class="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105 flex items-center gap-2 shadow-lg">
+                    <i class="fas fa-sign-in-alt"></i> Login to Clone
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Itinerary Timeline -->
+        <div class="lg:col-span-2">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                <i class="fas fa-route text-violet-600"></i> Trip Timeline
+            </h2>
+            
+            <div id="itinerary-timeline" class="space-y-8 border-l-2 border-gray-200 dark:border-gray-700 ml-4 py-4">
+                {% for stop in trip.stops|sort(attribute='order') %}
+                <div class="mb-10 ml-6 relative">
+                    <span class="absolute flex items-center justify-center w-8 h-8 bg-violet-100 rounded-full -left-10 ring-4 ring-white dark:ring-gray-900 dark:bg-violet-900 text-violet-600 dark:text-violet-400">
+                        <i class="fas fa-map-marker-alt text-sm"></i>
+                    </span>
+                    <div class="mb-4">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ stop.name }}</h3>
+                        <p class="text-gray-500 text-sm mb-2">{{ stop.location }}</p>
+                        <time class="text-sm font-medium text-violet-600 dark:text-violet-400">
+                            {{ stop.arrival_date.strftime('%b %d') }} - {{ stop.departure_date.strftime('%b %d') }}
+                        </time>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        {% for activity in stop.activities|sort(attribute='order') %}
+                        <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-gray-900 dark:text-white">{{ activity.title }}</h4>
+                                    {% if activity.description %}
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ activity.description }}</p>
+                                    {% endif %}
+                                </div>
+                                {% if activity.cost %}
+                                <span class="text-emerald-500 font-bold">₹{{ "{:,.0f}".format(activity.cost) }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="space-y-8">
+            <!-- About Trip -->
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">About this Trip</h3>
+                <p class="text-gray-600 dark:text-gray-400 leading-relaxed">{{ trip.description or 'No description provided.' }}</p>
+                <div class="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 font-bold">
+                            {{ trip.user.username[0]|upper }}
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ trip.user.username }}</p>
+                            <p class="text-xs text-gray-500">Trip Planner</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Card -->
+            <div class="bg-gradient-to-br from-violet-600 to-indigo-700 p-6 rounded-3xl shadow-xl text-white">
+                <h3 class="text-lg font-bold mb-4">Trip Summary</h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="opacity-80">Duration</span>
+                        <span class="font-bold">{{ (trip.end_date - trip.start_date).days + 1 }} Days</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="opacity-80">Total Stops</span>
+                        <span class="font-bold">{{ trip.stops.count() }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="opacity-80">Activities</span>
+                        <span class="font-bold">{{ trip.activities.count() }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function cloneTrip(token) {
+    if (!confirm('Would you like to clone this trip to your account?')) return;
+    
+    Loading.show('Cloning trip...');
+    try {
+        const response = await fetch(`/api/share/clone/${token}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            }
+        });
+        
+        const data = await response.json();
+        if (response.ok) {
+            Notify.success('Trip cloned successfully!');
+            setTimeout(() => window.location.href = data.redirect_url, 1500);
+        } else {
+            Notify.error(data.error || 'Failed to clone trip');
+        }
+    } catch (e) {
+        Notify.error('An error occurred. Please try again.');
+    } finally {
+        Loading.hide();
+    }
+}
+</script>
+{% endblock %}

@@ -17,7 +17,8 @@ class Trip(db.Model):
     end_date = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(50), default='planning', nullable=False)  # planning, ongoing, completed
     budget = db.Column(db.Float, default=0.0)
-    image_url = db.Column(db.String(500), default='')
+    image_url = db.Column(db.String(500), nullable=True)
+    is_public = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
