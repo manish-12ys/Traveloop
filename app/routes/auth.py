@@ -107,6 +107,45 @@ def login():
     return render_template('pages/auth/login.html')
 
 
+@auth_bp.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Render admin login form and authenticate admin users."""
+    if current_user.is_authenticated:
+        if current_user.is_admin:
+            return redirect(url_for('main.admin_dashboard'))
+
+        flash('Your account does not have admin access.', 'error')
+        return redirect(url_for('main.dashboard'))
+
+    if request.method == 'POST':
+        identifier = request.form.get('identifier', '').strip()
+        password = request.form.get('password', '')
+        remember = request.form.get('remember') == 'on'
+
+        if not identifier or not password:
+            flash('Please enter your admin username/email and password.', 'error')
+            return render_template('pages/auth/admin_login.html')
+
+        user = User.query.filter(
+            (User.username == identifier) | (User.email == identifier.lower())
+        ).first()
+
+        if user is None or not user.check_password(password) or not user.is_admin:
+            flash('Invalid admin credentials. Please try again.', 'error')
+            return render_template('pages/auth/admin_login.html')
+
+        login_user(user, remember=remember)
+
+        next_url = request.args.get('next', '')
+        if _is_safe_redirect(next_url):
+            return redirect(next_url)
+
+        flash(f'Welcome to the admin dashboard, {user.username}.', 'success')
+        return redirect(url_for('main.admin_dashboard'))
+
+    return render_template('pages/auth/admin_login.html')
+
+
 @auth_bp.route('/logout')
 @login_required
 def logout():

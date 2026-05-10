@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard | Traveloop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .stat-card:hover { transform: translateY(-4px); }
+    .chart-container { position: relative; height: 280px; }
+    .tab-btn { transition: all 0.2s; }
+    .tab-btn.active { background: #7c3aed; color: white; }
+    .admin-table tr:hover td { background: rgba(124, 58, 237, 0.05); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-10">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg">
+                    <i class="fas fa-shield-halved text-white"></i>
+                </div>
+                <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white">Admin Dashboard</h1>
+            </div>
+            <p class="text-gray-500 dark:text-gray-400 ml-13">Platform analytics &amp; user management</p>
+        </div>
+        <span class="text-xs bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 px-3 py-1.5 rounded-full font-bold">Admin Access</span>
+    </div>
+
+    <!-- Overview KPI Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-10" id="kpi-grid">
+        <!-- Injected by JS -->
+        <div class="col-span-full flex justify-center py-8">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-600"></div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+        <!-- User/Trip Activity Line Chart -->
+        <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Activity Over Last 30 Days</h2>
+            <div class="chart-container">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Destinations Doughnut -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Top Destinations</h2>
+            <div class="chart-container" style="height: 220px;">
+                <canvas id="destinationsChart"></canvas>
+            </div>
+            <div id="destinations-legend" class="mt-4 space-y-1 text-sm"></div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Popular Activities + Users Table -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Popular Activities -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Popular Activities</h2>
+            <div id="activities-list" class="space-y-3"></div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white">All Users</h2>
+                <span id="user-count-badge" class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2.5 py-1 rounded-full font-bold"></span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left admin-table">
+                    <thead>
+                        <tr class="border-b border-gray-100 dark:border-gray-700">
+                            <th class="pb-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">User</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Trips</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Role</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body" class="divide-y divide-gray-50 dark:divide-gray-700/50">
+                        <!-- Injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const PALETTE = ['#7c3aed','#ec4899','#f59e0b','#10b981','#3b82f6','#6366f1','#14b8a6','#f43f5e','#84cc16','#8b5cf6'];
+
+// ── KPI Cards ──────────────────────────────────────────────────────────────
+async function loadOverview() {
+    const data = await API.get('/admin/stats/overview');
+    const kpis = [
+        { label: 'Total Users',      value: data.total_users,      icon: 'fa-users',         color: 'violet' },
+        { label: 'Total Trips',      value: data.total_trips,       icon: 'fa-map',           color: 'indigo' },
+        { label: 'Public Trips',     value: data.public_trips,      icon: 'fa-globe',         color: 'emerald' },
+        { label: 'Likes',            value: data.total_likes,       icon: 'fa-heart',         color: 'rose' },
+        { label: 'New Users (30d)',   value: data.new_users_30d,     icon: 'fa-user-plus',     color: 'sky' },
+    ];
+
+    const colors = { violet:'bg-violet-50 dark:bg-violet-900/20 text-violet-600', indigo:'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600', emerald:'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600', rose:'bg-rose-50 dark:bg-rose-900/20 text-rose-600', sky:'bg-sky-50 dark:bg-sky-900/20 text-sky-600' };
+
+    document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+        <div class="stat-card bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-lg">
+            <div class="w-10 h-10 rounded-xl ${colors[k.color]} flex items-center justify-center mb-3">
+                <i class="fas ${k.icon}"></i>
+            </div>
+            <p class="text-2xl font-extrabold text-gray-900 dark:text-white">${k.value.toLocaleString()}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">${k.label}</p>
+        </div>
+    `).join('');
+}
+
+// ── Activity Line Chart ────────────────────────────────────────────────────
+async function loadActivityChart() {
+    const data = await API.get('/admin/stats/user-activity');
+    const labels = data.map(d => {
+        const dt = new Date(d.date);
+        return `${dt.getMonth()+1}/${dt.getDate()}`;
+    });
+
+    new Chart(document.getElementById('activityChart'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                { label: 'New Users', data: data.map(d => d.users), borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.08)', tension: 0.4, fill: true, pointRadius: 3 },
+                { label: 'New Trips', data: data.map(d => d.trips), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', tension: 0.4, fill: true, pointRadius: 3 },
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', labels: { color: '#94a3b8', usePointStyle: true } } },
+            scales: {
+                x: { ticks: { color: '#94a3b8', maxTicksLimit: 10 }, grid: { display: false } },
+                y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.1)' }, beginAtZero: true }
+            }
+        }
+    });
+}
+
+// ── Destinations Doughnut ──────────────────────────────────────────────────
+async function loadDestinationsChart() {
+    const data = await API.get('/admin/stats/top-destinations');
+    if (!data.length) { document.getElementById('destinations-legend').innerHTML = '<p class="text-gray-400 text-center">No data yet</p>'; return; }
+
+    const labels = data.map(d => d.destination);
+    const values = data.map(d => d.count);
+
+    new Chart(document.getElementById('destinationsChart'), {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{ data: values, backgroundColor: PALETTE, borderWidth: 0 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            cutout: '70%'
+        }
+    });
+
+    document.getElementById('destinations-legend').innerHTML = data.slice(0, 5).map((d, i) => `
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${PALETTE[i]}"></span>
+                <span class="text-gray-700 dark:text-gray-300 truncate max-w-[140px]">${d.destination}</span>
+            </div>
+            <span class="font-bold text-gray-900 dark:text-white">${d.count}</span>
+        </div>
+    `).join('');
+}
+
+// ── Popular Activities ─────────────────────────────────────────────────────
+async function loadActivities() {
+    const data = await API.get('/admin/stats/popular-activities');
+    const max = data[0]?.count || 1;
+    document.getElementById('activities-list').innerHTML = data.map((a, i) => `
+        <div>
+            <div class="flex justify-between text-sm mb-1">
+                <span class="text-gray-700 dark:text-gray-300 truncate max-w-[200px]">${a.title}</span>
+                <span class="font-bold text-gray-900 dark:text-white ml-2">${a.count}</span>
+            </div>
+            <div class="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-700" style="width:${(a.count/max*100).toFixed(0)}%; background:${PALETTE[i % PALETTE.length]}"></div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ── Users Table ────────────────────────────────────────────────────────────
+async function loadUsers() {
+    const data = await API.get('/admin/users');
+    document.getElementById('user-count-badge').textContent = `${data.length} users`;
+
+    document.getElementById('users-table-body').innerHTML = data.map(u => `
+        <tr>
+            <td class="py-3 pr-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xs ${u.is_admin ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}">
+                        ${u.username[0].toUpperCase()}
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-900 dark:text-white">${u.username}</p>
+                        <p class="text-xs text-gray-500">${u.email}</p>
+                    </div>
+                </div>
+            </td>
+            <td class="py-3 text-center">
+                <span class="font-bold text-gray-900 dark:text-white">${u.trip_count}</span>
+            </td>
+            <td class="py-3 text-center">
+                <span class="text-xs px-2.5 py-1 rounded-full font-bold ${u.is_admin ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}">
+                    ${u.is_admin ? '🛡️ Admin' : 'User'}
+                </span>
+            </td>
+            <td class="py-3 text-center">
+                <button onclick="toggleAdmin(${u.id}, this)"
+                    class="text-xs px-3 py-1.5 rounded-lg border transition-colors ${u.is_admin ? 'border-red-200 text-red-500 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20' : 'border-violet-200 text-violet-600 hover:bg-violet-50 dark:border-violet-800 dark:hover:bg-violet-900/20'}"
+                    data-is-admin="${u.is_admin}">
+                    ${u.is_admin ? 'Revoke Admin' : 'Make Admin'}
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function toggleAdmin(userId, btn) {
+    Loading.show('Updating...');
+    try {
+        const data = await API.post(`/admin/users/${userId}/toggle-admin`, {});
+        Notify.success(`${data.username} is now ${data.is_admin ? 'an Admin' : 'a User'}`);
+        loadUsers();
+    } catch (e) {
+        Notify.error(e.message || 'Failed to update role');
+    } finally {
+        Loading.hide();
+    }
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+(async () => {
+    await Promise.all([
+        loadOverview(),
+        loadActivityChart(),
+        loadDestinationsChart(),
+        loadActivities(),
+        loadUsers(),
+    ]);
+})();
+</script>
+{% endblock %}
