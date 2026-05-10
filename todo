@@ -1,0 +1,382 @@
+# Traveloop —System To-Do Checklist
+
+---
+
+# SYSTEM 1 — Backend + Database System
+
+## Owner: Member 1
+
+# PHASE 1 — Backend Setup
+
+* [ ] Create Flask project
+* [ ] Create virtual environment
+* [ ] Install Flask dependencies
+* [ ] Setup `.env`
+* [ ] Setup PostgreSQL/SQLite
+* [ ] Configure SQLAlchemy
+* [ ] Configure Flask-Migrate
+* [ ] Setup Flask-Login
+* [ ] Setup project folders
+* [ ] Push initial code to GitHub
+
+---
+
+# PHASE 2 — Authentication
+
+* [ ] Create User model
+* [ ] Create Signup route
+* [ ] Create Login route
+* [ ] Create Logout route
+* [ ] Add password hashing
+* [ ] Add session management
+* [ ] Add authentication validation
+* [ ] Protect routes using login_required
+* [ ] Test authentication flow
+
+---
+
+# PHASE 3 — Trip System
+
+* [ ] Create Trip model
+* [ ] Create Stop model
+* [ ] Create Activity model
+* [ ] Create Budget model
+* [ ] Create Packing model
+* [ ] Create Notes model
+* [ ] Create SharedLink model
+
+---
+
+# PHASE 4 — Backend APIs
+
+* [ ] Create trip API
+* [ ] Create trip edit API
+* [ ] Create trip delete API
+* [ ] Create stop add API
+* [ ] Create stop reorder API
+* [ ] Create activity add API
+* [ ] Create budget calculation API
+* [ ] Create notes API
+* [ ] Create packing checklist API
+
+---
+
+# PHASE 5 — Sharing System
+
+* [ ] Generate UUID share tokens
+* [ ] Create public itinerary route
+* [ ] Create read-only mode
+* [ ] Add copy trip functionality
+
+---
+
+# PHASE 6 — Optimization
+
+* [ ] Optimize database queries
+* [ ] Add API caching
+* [ ] Add error handling
+* [ ] Add CSRF protection
+* [ ] Add rate limiting
+* [ ] Test all backend routes
+
+---
+
+# FINAL TASKS
+
+* [ ] Connect all frontend pages
+* [ ] Fix backend bugs
+* [ ] Deploy backend
+* [ ] Setup production database
+* [ ] Final API testing
+
+---
+
+# SYSTEM 2 — Frontend + UI/UX System
+
+## Owner: Member 2
+
+# PHASE 1 — UI Setup
+
+* [ ] Install TailwindCSS
+* [ ] Setup Flowbite
+* [ ] Setup Heroicons
+* [ ] Create global styles
+* [ ] Create violet color palette
+* [ ] Setup dark mode
+* [ ] Create responsive layout
+* [ ] Create reusable components
+
+---
+
+# PHASE 2 — Authentication UI
+
+* [ ] Design Login page
+* [ ] Design Signup page
+* [ ] Add animations
+* [ ] Add form validation UI
+* [ ] Add loading states
+* [ ] Add responsive behavior
+
+---
+
+# PHASE 3 — Dashboard UI
+
+* [ ] Create Navbar
+* [ ] Create Sidebar
+* [ ] Create Hero Banner
+* [ ] Create Trip Cards
+* [ ] Create Destination Cards
+* [ ] Create Budget Summary Cards
+* [ ] Create Search Bar UI
+
+---
+
+# PHASE 4 — Trip UI
+
+* [ ] Design Create Trip page
+* [ ] Design Trip List page
+* [ ] Design Itinerary Builder page
+* [ ] Design Timeline UI
+* [ ] Design Calendar UI
+* [ ] Design Activity Cards
+* [ ] Design Budget Section
+
+---
+
+# PHASE 5 — Advanced UI
+
+* [ ] Design Packing Checklist UI
+* [ ] Design Notes UI
+* [ ] Design Community Feed UI
+* [ ] Design Profile Page
+* [ ] Design Settings Page
+* [ ] Design Shared Trip Page
+
+---
+
+# PHASE 6 — Polish
+
+* [ ] Add hover animations
+* [ ] Add glassmorphism
+* [ ] Add transitions
+* [ ] Improve mobile responsiveness
+* [ ] Improve tablet responsiveness
+* [ ] Optimize spacing
+* [ ] Optimize typography
+
+---
+
+# FINAL TASKS
+
+* [ ] Final responsive testing
+* [ ] Fix UI bugs
+* [ ] Improve loading experience
+* [ ] Improve accessibility
+* [ ] Final UI polish
+
+---
+
+# SYSTEM 3 — APIs + Maps + Itinerary System
+
+## Owner: Member 3
+
+# PHASE 1 — API Research
+
+* [ ] Setup GeoDB Cities API
+* [ ] Setup OpenTripMap API
+* [ ] Setup OpenWeatherMap API
+* [ ] Setup OpenRouteService API
+* [ ] Setup Unsplash API
+* [ ] Document API limits
+
+---
+
+# PHASE 2 — City Search
+
+* [ ] Create city autocomplete
+* [ ] Fetch city details
+* [ ] Fetch country data
+* [ ] Fetch coordinates
+* [ ] Fetch city images
+* [ ] Add search filters
+
+---
+
+# PHASE 3 — Activity Search
+
+* [ ] Fetch tourist attractions
+* [ ] Fetch restaurants
+* [ ] Fetch adventure activities
+* [ ] Add activity categories
+* [ ] Add activity filters
+* [ ] Add activity images
+
+---
+
+# PHASE 4 — Maps
+
+* [ ] Setup Leaflet.js
+* [ ] Show city markers
+* [ ] Show trip routes
+* [ ] Show stop locations
+* [ ] Show activity locations
+* [ ] Add route visualization
+* [ ] Add travel distance calculations
+
+---
+
+# PHASE 5 — Itinerary Engine
+
+* [ ] Create timeline generator
+* [ ] Add day-wise itinerary
+* [ ] Add drag-drop ordering
+* [ ] Add activity scheduling
+* [ ] Add stop scheduling
+* [ ] Add travel duration estimation
+
+---
+
+# PHASE 6 — Weather & Smart Features
+
+* [ ] Fetch weather forecasts
+* [ ] Add weather widgets
+* [ ] Add travel suggestions
+* [ ] Add best-time recommendations
+
+---
+
+# FINAL TASKS
+
+* [ ] Optimize API requests
+* [ ] Add API caching
+* [ ] Handle API failures
+* [ ] Test all integrations
+* [ ] Fix map bugs
+
+---
+
+# SYSTEM 4 — Budget + Charts + Community + Deployment
+
+## Owner: Member 4
+
+# PHASE 1 — Budget System
+
+* [ ] Create budget calculator
+* [ ] Create expense tracker
+* [ ] Create daily budget calculation
+* [ ] Create total trip cost calculation
+* [ ] Create budget alerts
+* [ ] Create overbudget warnings
+
+---
+
+# PHASE 2 — Charts & Analytics
+
+* [ ] Setup Chart.js
+* [ ] Create pie chart
+* [ ] Create bar chart
+* [ ] Create line graph
+* [ ] Create expense breakdown chart
+* [ ] Create budget trend chart
+
+---
+
+# PHASE 3 — Packing Checklist
+
+* [ ] Add checklist item feature
+* [ ] Add packed/unpacked toggle
+* [ ] Add category filters
+* [ ] Add checklist progress
+* [ ] Add reset checklist feature
+
+---
+
+# PHASE 4 — Notes & Community
+
+* [ ] Create trip notes system
+* [ ] Create journal system
+* [ ] Create community feed
+* [ ] Create likes system
+* [ ] Create comments system
+* [ ] Create shared itinerary posts
+
+---
+
+# PHASE 5 — Admin Dashboard
+
+* [ ] Create analytics dashboard
+* [ ] Show user statistics
+* [ ] Show trip statistics
+* [ ] Show top destinations
+* [ ] Show popular activities
+
+---
+
+# PHASE 6 — Deployment
+
+* [ ] Setup Render deployment
+* [ ] Setup environment variables
+* [ ] Connect PostgreSQL
+* [ ] Deploy frontend
+* [ ] Deploy backend
+* [ ] Test live APIs
+* [ ] Fix deployment issues
+
+---
+
+# FINAL TASKS
+
+* [ ] Create final presentation
+* [ ] Prepare demo flow
+* [ ] Create screenshots
+* [ ] Create feature walkthrough
+* [ ] Final testing
+
+---
+
+# FINAL MASTER CHECKLIST
+
+# CORE MVP
+
+* [ ] Authentication
+* [ ] Dashboard
+* [ ] Create Trip
+* [ ] Trip Listing
+* [ ] Itinerary Builder
+* [ ] Activity Search
+* [ ] Budget System
+* [ ] Timeline View
+
+---
+
+# IMPORTANT FEATURES
+
+* [ ] Packing Checklist
+* [ ] Notes System
+* [ ] Public Sharing
+* [ ] Maps Integration
+* [ ] Weather Integration
+
+---
+
+# BONUS FEATURES
+
+* [ ] Community Feed
+* [ ] Analytics Dashboard
+* [ ] AI Suggestions
+* [ ] Route Optimization
+
+---
+
+# FINAL SUBMISSION CHECKLIST
+
+* [ ] Fully responsive
+* [ ] No major bugs
+* [ ] APIs working
+* [ ] Database working
+* [ ] Smooth demo flow
+* [ ] GitHub updated
+* [ ] Deployment live
+* [ ] Presentation ready
+* [ ] Screenshots ready
+* [ ] Team roles finalized
