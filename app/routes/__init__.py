@@ -30,9 +30,19 @@ def health():
     return {'status': 'ok', 'message': 'Traveloop API is running'}, 200
 
 
+from app.routes.trip_api import trip_api_bp
+
 def register_blueprints(app):
     """Register all blueprints with the Flask app"""
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(trips_bp)
+    app.register_blueprint(trip_api_bp)
+
+@trips_bp.route('/<int:trip_id>')
+@login_required
+def trip_detail(trip_id):
+    """Itinerary Builder page for a specific trip"""
+    # Just render the template, javascript will fetch the data
+    return render_template('pages/trip_detail.html', trip_id=trip_id)

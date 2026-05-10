@@ -19,7 +19,7 @@ app = create_app(os.getenv('FLASK_ENV', 'development'))
 def main():
     """Run the Flask development server"""
     print("=" * 60)
-    print("🚀 Starting Traveloop Flask Application")
+    print(">> Starting Traveloop Flask Application")
     print("=" * 60)
     print(f"Environment: {os.getenv('FLASK_ENV', 'development')}")
     print(f"Debug Mode: {app.debug}")

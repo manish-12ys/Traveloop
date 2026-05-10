@@ -188,18 +188,46 @@ const Storage = {
 
 // Date Helper
 const DateHelper = {
-    format(date, format = 'MM/DD/YYYY') {
-        const d = new Date(date);
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const year = d.getFullYear();
-        
-        return format
-            .replace('MM', month)
-            .replace('DD', day)
-            .replace('YYYY', year);
+    /**
+     * Parse date parts safely from an ISO string (YYYY-MM-DD or full ISO).
+     * Uses string splitting to avoid UTC→local timezone shift bugs.
+     */
+    _parse(date) {
+        if (!date) return null;
+        const str = String(date);
+        // If it's a date-only string like "2026-05-10", split directly — no Date object
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+            const [year, month, day] = str.split('-');
+            return { day, month, year };
+        }
+        // For full datetime strings, use Date but extract UTC parts to stay consistent
+        const d = new Date(str);
+        if (isNaN(d)) return null;
+        return {
+            day: String(d.getUTCDate()).padStart(2, '0'),
+            month: String(d.getUTCMonth() + 1).padStart(2, '0'),
+            year: d.getUTCFullYear()
+        };
     },
-    
+
+    format(date) {
+        const p = this._parse(date);
+        if (!p) return 'Invalid date';
+        return `${p.day}/${p.month}/${p.year}`;
+    },
+
+    formatDateTime(date) {
+        if (!date) return '';
+        const d = new Date(date);
+        if (isNaN(d)) return '';
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+    },
+
     getRelativeTime(date) {
         const now = new Date();
         const past = new Date(date);
@@ -252,10 +280,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Global error handler
+// Global error handler - only fires for uncaught synchronous errors
 window.addEventListener('error', (event) => {
-    console.error('Global error:', event.error);
-    Notify.error('An error occurred. Please try again.');
+    // Only show toast for errors NOT from fetch/async operations (those have their own handling)
+    if (event.error && !(event.error instanceof TypeError && event.error.message.includes('fetch'))) {
+        console.error('Global error:', event.error);
+    }
 });
 
 // Network error handler

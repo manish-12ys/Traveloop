@@ -97,28 +97,32 @@ def create_trip():
         return {'error': f'Invalid data: {str(e)}'}, 400
 
 
-@dashboard_bp.route('/trips/<int:trip_id>', methods=['PUT'])
+@dashboard_bp.route('/trips/<int:trip_id>', methods=['GET', 'PUT'])
 @login_required
-def update_trip(trip_id):
-    """Update an existing trip"""
+def manage_trip(trip_id):
+    """Get or update a single trip"""
+    if request.method == 'GET':
+        trip = DashboardService.get_trip(trip_id, current_user.id)
+        if not trip:
+            return {'error': 'Trip not found'}, 404
+        return jsonify(trip), 200
+
+    # PUT
     data = request.get_json()
-    
     try:
-        # Parse dates if provided
         if 'start_date' in data:
             data['start_date'] = datetime.fromisoformat(data['start_date']).date()
         if 'end_date' in data:
             data['end_date'] = datetime.fromisoformat(data['end_date']).date()
-        
+
         trip = DashboardService.update_trip(trip_id, current_user.id, **data)
-        
         if not trip:
             return {'error': 'Trip not found'}, 404
-        
         return jsonify(trip), 200
-    
+
     except (ValueError, KeyError) as e:
         return {'error': f'Invalid data: {str(e)}'}, 400
+
 
 
 @dashboard_bp.route('/trips/<int:trip_id>', methods=['DELETE'])

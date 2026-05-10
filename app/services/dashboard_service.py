@@ -35,6 +35,14 @@ class DashboardService:
         return [trip.to_dict() for trip in trips]
     
     @staticmethod
+    def get_trip(trip_id, user_id):
+        """Get a single trip for a user"""
+        trip = Trip.query.filter_by(id=trip_id, user_id=user_id).first()
+        if not trip:
+            return None
+        return trip.to_dict()
+    
+    @staticmethod
     def get_trip_count(user_id):
         """Get total trip count for a user"""
         return Trip.query.filter_by(user_id=user_id).count()

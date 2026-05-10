@@ -57,7 +57,7 @@
                     <div class="flex items-start justify-between">
                         <div>
                             <p class="text-sm text-gray-600 dark:text-slate-400">Total Budget</p>
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2" id="stat-total-budget">$0</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2" id="stat-total-budget">₹0</p>
                         </div>
                         <span class="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-300">
                             <i class="fas fa-wallet text-xl"></i>
@@ -69,7 +69,7 @@
                     <div class="flex items-start justify-between">
                         <div>
                             <p class="text-sm text-gray-600 dark:text-slate-400">Avg Budget</p>
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2" id="stat-avg-budget">$0</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2" id="stat-avg-budget">₹0</p>
                         </div>
                         <span class="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-300">
                             <i class="fas fa-chart-pie text-xl"></i>
@@ -101,7 +101,7 @@
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
                             <span class="text-gray-600 dark:text-slate-400">Total Spent</span>
-                            <span class="font-semibold text-gray-900 dark:text-white" id="budget-spent">$0</span>
+                            <span class="font-semibold text-gray-900 dark:text-white" id="budget-spent">₹0</span>
                         </div>
                         <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                             <div id="budget-progress" class="bg-sky-500 h-2 rounded-full" style="width: 0%"></div>
@@ -249,8 +249,8 @@
     function updateStats(stats) {
         document.getElementById('stat-total-trips').textContent = stats.total_trips;
         document.getElementById('stat-active-trips').textContent = stats.active_trips;
-        document.getElementById('stat-total-budget').textContent = `$${stats.total_budget.toFixed(2)}`;
-        document.getElementById('stat-avg-budget').textContent = `$${stats.average_trip_budget.toFixed(2)}`;
+        document.getElementById('stat-total-budget').textContent = `₹${stats.total_budget.toLocaleString('en-IN')}`;
+        document.getElementById('stat-avg-budget').textContent = `₹${stats.average_trip_budget.toLocaleString('en-IN')}`;
     }
     
     function renderActivTrips(trips) {
@@ -284,11 +284,11 @@
     }
     
     function createTripCard(trip) {
-        const startDate = new Date(trip.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const endDate = new Date(trip.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const startDate = DateHelper.format(trip.start_date);
+        const endDate = DateHelper.format(trip.end_date);
         
         return `
-            <div class="card reveal group cursor-pointer hover:shadow-lg transition-all duration-300">
+            <a href="/trips/${trip.id}" class="card reveal block group cursor-pointer hover:shadow-lg transition-all duration-300">
                 <div class="relative h-48 bg-gradient-to-br from-sky-400 to-orange-400 rounded-t-xl overflow-hidden">
                     <div class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300"></div>
                     <div class="absolute inset-0 flex items-center justify-center">
@@ -304,11 +304,11 @@
                         <span><i class="far fa-calendar mr-1"></i>${startDate} - ${endDate}</span>
                     </div>
                     <div class="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-slate-800">
-                        <span class="font-semibold text-gray-900 dark:text-white">Budget: $${trip.budget.toFixed(2)}</span>
+                        <span class="font-semibold text-gray-900 dark:text-white">Budget: ₹${trip.budget.toLocaleString('en-IN')}</span>
                         <span class="px-3 py-1 rounded-full text-xs font-medium ${trip.status === 'planning' ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'}">${trip.status}</span>
                     </div>
                 </div>
-            </div>
+            </a>
         `;
     }
     

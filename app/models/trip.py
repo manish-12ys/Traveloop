@@ -23,6 +23,11 @@ class Trip(db.Model):
     
     # Relationships
     user = db.relationship('User', backref=db.backref('trips', lazy='dynamic', cascade='all, delete-orphan'))
+    stops = db.relationship('Stop', backref='trip', lazy='dynamic', cascade='all, delete-orphan')
+    activities = db.relationship('Activity', backref='trip', lazy='dynamic', cascade='all, delete-orphan')
+    budget_items = db.relationship('BudgetItem', backref='trip', lazy='dynamic', cascade='all, delete-orphan')
+    packing_items = db.relationship('PackingItem', backref='trip', lazy='dynamic', cascade='all, delete-orphan')
+    notes = db.relationship('Note', backref='trip', lazy='dynamic', cascade='all, delete-orphan')
     
     def to_dict(self):
         """Convert trip to dictionary for JSON responses"""

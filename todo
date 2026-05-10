@@ -100,32 +100,32 @@
 
 ---
 
-# PHASE 3 — Trip System
+# PHASE 3 — Trip System (COMPLETED ✅)
 
 ## Backend: Trip Models & APIs
-* [ ] Create Trip model
-* [ ] Create Stop model
-* [ ] Create Activity model
-* [ ] Create Budget model
-* [ ] Create Packing model
-* [ ] Create Notes model
-* [ ] Create trip creation API
-* [ ] Create trip edit API
-* [ ] Create trip delete API
-* [ ] Create stop add/reorder API
-* [ ] Create activity add API
-* [ ] Create budget calculation API
+* [x] Create Trip model
+* [x] Create Stop model
+* [x] Create Activity model
+* [x] Create Budget model
+* [x] Create Packing model
+* [x] Create Notes model
+* [x] Create trip creation API
+* [x] Create trip edit API
+* [x] Create trip delete API
+* [x] Create stop add/reorder API
+* [x] Create activity add API
+* [x] Create budget calculation API
 
 ## Frontend: Trip UI (depends on backend above)
-* [ ] Design Create Trip page
-* [ ] Connect to trip creation API
-* [ ] Design Trip List page
-* [ ] Design Itinerary Builder page
-* [ ] Design Timeline UI
-* [ ] Design Calendar UI
-* [ ] Design Activity Cards
-* [ ] Design Budget Section
-* [ ] Add drag-drop for activity ordering
+* [x] Design Create Trip page
+* [x] Connect to trip creation API
+* [x] Design Trip List page
+* [x] Design Itinerary Builder page
+* [x] Design Timeline UI
+* [x] Design Calendar UI
+* [x] Design Activity Cards
+* [x] Design Budget Section
+* [x] Add drag-drop for activity ordering
 
 ---
 

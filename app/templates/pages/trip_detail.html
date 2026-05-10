@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+
+{% block title %}Itinerary Builder - Traveloop{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom scrollbar for timeline */
+    .timeline-container::-webkit-scrollbar { width: 6px; }
+    .timeline-container::-webkit-scrollbar-track { background: transparent; }
+    .timeline-container::-webkit-scrollbar-thumb { background-color: #e2e8f0; border-radius: 20px; }
+    .dark .timeline-container::-webkit-scrollbar-thumb { background-color: #334155; }
+    .drag-ghost { opacity: 0.5; background-color: #f8fafc; border: 2px dashed #cbd5e1; }
+    .dark .drag-ghost { background-color: #1e293b; border-color: #475569; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto" id="trip-app" data-trip-id="{{ trip_id }}">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white mb-2" id="trip-title">Loading Trip...</h1>
+        <p class="text-gray-500 dark:text-gray-400" id="trip-dates"><i class="far fa-calendar mr-2"></i><span></span></p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="mb-8 border-b border-gray-200 dark:border-gray-800">
+        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="trip-tabs" data-tabs-toggle="#trip-tab-content" role="tablist">
+            <li class="mr-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-violet-600 hover:border-violet-600 dark:hover:text-violet-400" id="itinerary-tab" data-tabs-target="#itinerary" type="button" role="tab" aria-controls="itinerary" aria-selected="true">
+                    <i class="fas fa-map-marked-alt mr-2"></i> Itinerary
+                </button>
+            </li>
+            <li class="mr-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-violet-600 hover:border-violet-600 dark:hover:text-violet-400" id="budget-tab" data-tabs-target="#budget" type="button" role="tab" aria-controls="budget" aria-selected="false">
+                    <i class="fas fa-wallet mr-2"></i> Budget
+                </button>
+            </li>
+            <li class="mr-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-violet-600 hover:border-violet-600 dark:hover:text-violet-400" id="packing-tab" data-tabs-target="#packing" type="button" role="tab" aria-controls="packing" aria-selected="false">
+                    <i class="fas fa-suitcase mr-2"></i> Packing
+                </button>
+            </li>
+            <li role="presentation">
+                <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-violet-600 hover:border-violet-600 dark:hover:text-violet-400" id="notes-tab" data-tabs-target="#notes" type="button" role="tab" aria-controls="notes" aria-selected="false">
+                    <i class="fas fa-sticky-note mr-2"></i> Notes
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Tab Contents -->
+    <div id="trip-tab-content">
+        <!-- Itinerary Tab -->
+        <div class="hidden p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50" id="itinerary" role="tabpanel" aria-labelledby="itinerary-tab">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold dark:text-white">Timeline</h2>
+                <button onclick="openStopModal()" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    <i class="fas fa-plus mr-1"></i> Add Stop
+                </button>
+            </div>
+            <div class="timeline-container relative border-l border-gray-200 dark:border-gray-700 ml-3" id="timeline">
+                <!-- Timeline items injected via JS -->
+            </div>
+            <!-- Empty State -->
+            <div id="itinerary-empty" class="hidden text-center py-12">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 mb-4">
+                    <i class="fas fa-route text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">No stops yet</h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-4">Start building your itinerary by adding a destination stop.</p>
+                <button onclick="openStopModal()" class="px-4 py-2 border border-violet-600 text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg text-sm font-medium transition-colors">
+                    Add First Stop
+                </button>
+            </div>
+        </div>
+
+        <!-- Budget Tab -->
+        <div class="hidden p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50" id="budget" role="tabpanel" aria-labelledby="budget-tab">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold dark:text-white">Budget & Expenses</h2>
+                <button onclick="openBudgetModal()" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    <i class="fas fa-plus mr-1"></i> Add Expense
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Budget</p>
+                    <p class="text-2xl font-bold dark:text-white" id="budget-total">₹0</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Expenses</p>
+                    <p class="text-2xl font-bold text-amber-500" id="budget-spent">₹0</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Remaining</p>
+                    <p class="text-2xl font-bold text-emerald-500" id="budget-remaining">₹0</p>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Category</th>
+                            <th scope="col" class="px-6 py-3">Description</th>
+                            <th scope="col" class="px-6 py-3 text-right">Expected</th>
+                            <th scope="col" class="px-6 py-3 text-right">Actual</th>
+                            <th scope="col" class="px-6 py-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="budget-list">
+                        <!-- Budget items injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Packing Tab -->
+        <div class="hidden p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50" id="packing" role="tabpanel" aria-labelledby="packing-tab">
+            <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <h2 class="text-xl font-bold dark:text-white mb-6">Packing List</h2>
+                
+                <form id="packing-form" class="flex gap-2 mb-6">
+                    <input type="text" id="packing-input" placeholder="Add an item to pack..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required>
+                    <button type="submit" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
+                        Add
+                    </button>
+                </form>
+
+                <div class="space-y-2" id="packing-list">
+                    <!-- Packing items injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes Tab -->
+        <div class="hidden p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50" id="notes" role="tabpanel" aria-labelledby="notes-tab">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold dark:text-white">Trip Notes</h2>
+                <button onclick="openNoteModal()" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    <i class="fas fa-plus mr-1"></i> Add Note
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="notes-list">
+                <!-- Notes injected via JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stop Modal -->
+<div id="stop-modal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+    <div class="relative w-full max-w-md max-h-full">
+        <div class="relative bg-white rounded-xl shadow dark:bg-gray-800">
+            <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-700">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Add Stop</h3>
+                <button type="button" onclick="closeModal('stop-modal')" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <form id="stop-form">
+                    <div class="mb-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Destination Name</label>
+                        <input type="text" id="stop-name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Location</label>
+                        <input type="text" id="stop-location" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Arrival Date</label>
+                            <input type="date" id="stop-arrival" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Departure Date</label>
+                            <input type="date" id="stop-departure" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full text-white bg-violet-600 hover:bg-violet-700 focus:ring-4 focus:outline-none focus:ring-violet-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-violet-600 dark:hover:bg-violet-700">Save Stop</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Modal -->
+<div id="activity-modal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+    <div class="relative w-full max-w-md max-h-full">
+        <div class="relative bg-white rounded-xl shadow dark:bg-gray-800">
+            <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-700">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Add Activity</h3>
+                <button type="button" onclick="closeModal('activity-modal')" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <form id="activity-form">
+                    <input type="hidden" id="activity-stop-id">
+                    <div class="mb-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Title</label>
+                        <input type="text" id="activity-title" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Description</label>
+                        <textarea id="activity-desc" rows="2" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Start Time</label>
+                            <input type="datetime-local" id="activity-start" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">End Time</label>
+                            <input type="datetime-local" id="activity-end" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cost (₹)</label>
+                        <input type="number" step="0.01" id="activity-cost" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    </div>
+                    <button type="submit" class="w-full text-white bg-violet-600 hover:bg-violet-700 focus:ring-4 focus:outline-none focus:ring-violet-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-violet-600 dark:hover:bg-violet-700">Save Activity</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Budget Modal -->
+<div id="budget-modal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+    <div class="relative w-full max-w-md max-h-full">
+        <div class="relative bg-white rounded-xl shadow dark:bg-gray-800">
+            <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-700">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Add Expense</h3>
+                <button type="button" onclick="closeModal('budget-modal')" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <form id="budget-form">
+                    <div class="mb-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Category</label>
+                        <select id="budget-category" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                            <option value="Transport">Transport</option>
+                            <option value="Accommodation">Accommodation</option>
+                            <option value="Food">Food</option>
+                            <option value="Activities">Activities</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Description</label>
+                        <input type="text" id="budget-desc" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Expected (₹)</label>
+                            <input type="number" step="0.01" id="budget-expected" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Actual (₹)</label>
+                            <input type="number" step="0.01" id="budget-actual" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full text-white bg-violet-600 hover:bg-violet-700 focus:ring-4 focus:outline-none focus:ring-violet-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-violet-600 dark:hover:bg-violet-700">Save Expense</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Note Modal -->
+<div id="note-modal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+    <div class="relative w-full max-w-lg max-h-full">
+        <div class="relative bg-white rounded-xl shadow dark:bg-gray-800">
+            <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-700">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Add Note</h3>
+                <button type="button" onclick="closeModal('note-modal')" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <form id="note-form">
+                    <div class="mb-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Title</label>
+                        <input type="text" id="note-title" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Content</label>
+                        <textarea id="note-content" rows="6" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required></textarea>
+                    </div>
+                    <button type="submit" class="w-full text-white bg-violet-600 hover:bg-violet-700 focus:ring-4 focus:outline-none focus:ring-violet-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-violet-600 dark:hover:bg-violet-700">Save Note</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- SortableJS for drag & drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script src="{{ url_for('static', filename='js/trip.js') }}"></script>
+{% endblock %}

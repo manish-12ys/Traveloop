@@ -45,7 +45,7 @@ def create_app(config_name=None):
     
     # Create tables
     with app.app_context():
-        from app.models import User, Trip  # noqa: F401
+        from app.models import User, Trip, Stop, Activity, BudgetItem, PackingItem, Note  # noqa: F401
         db.create_all()
     
     return app
