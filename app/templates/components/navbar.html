@@ -51,7 +51,7 @@
                             {% if current_user.profile_picture %}
                             <img src="{{ current_user.profile_picture }}" alt="Profile" class="w-6 h-6 rounded-full object-cover">
                             {% else %}
-                            <i class="fas fa-user-circle text-xl text-sky-500"></i>
+                            <img src="{{ url_for('static', filename='img/default_avatar.png') }}" alt="Default Profile" class="w-6 h-6 rounded-full object-cover">
                             {% endif %}
                             <span class="text-sm font-medium hidden sm:inline">{{ current_user.username }}</span>
                             <i class="fas fa-chevron-down text-xs"></i>

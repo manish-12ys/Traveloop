@@ -31,7 +31,7 @@ with app.app_context():
             'end_date': datetime.now().date() + timedelta(days=37),
             'status': 'completed',
             'budget': 50000,
-            'image_url': 'https://images.unsplash.com/photo-1564507592208-028274d816a4?q=80&w=2940&auto=format&fit=crop',
+            'image_url': '/static/img/community/delhi.png',
             'is_public': True,
             'stops': [
                 {'name': 'Delhi', 'location': 'New Delhi, DL, India', 'days_offset': 0, 'duration': 2},
@@ -52,7 +52,7 @@ with app.app_context():
             'end_date': datetime.now().date() + timedelta(days=50),
             'status': 'planning',
             'budget': 25000,
-            'image_url': 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=2874&auto=format&fit=crop',
+            'image_url': '/static/img/community/goa.png',
             'is_public': True,
             'stops': [
                 {'name': 'North Goa', 'location': 'Baga Beach, Goa, India', 'days_offset': 0, 'duration': 3},
@@ -72,7 +72,7 @@ with app.app_context():
             'end_date': datetime.now().date() + timedelta(days=110),
             'status': 'planning',
             'budget': 150000,
-            'image_url': 'https://images.unsplash.com/photo-1502602898657-3e907a5ea82c?q=80&w=2946&auto=format&fit=crop',
+            'image_url': '/static/img/community/paris.png',
             'is_public': True,
             'stops': [
                 {'name': 'Paris', 'location': 'Paris, France', 'days_offset': 0, 'duration': 5},
