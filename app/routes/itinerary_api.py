@@ -17,8 +17,9 @@ def get_trip_weather(trip_id):
     stops = TripService.get_trip_stops(trip_id, current_user.id)
     if not stops and trip_id > 0: # Check if empty due to unauthorized
         # Verify if trip exists but unauthorized
+        from app import db
         from app.models.trip import Trip
-        trip = Trip.query.get(trip_id)
+        trip = db.session.get(Trip, trip_id)
         if trip and trip.user_id != current_user.id:
             return jsonify({'error': 'Unauthorized'}), 403
             

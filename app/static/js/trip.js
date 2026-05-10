@@ -55,7 +55,7 @@ async function loadTripDetails() {
         const end = DateHelper.format(trip.end_date);
         document.getElementById('trip-dates').innerHTML = `<i class="far fa-calendar mr-2"></i><span>${start} - ${end}</span>`;
     } catch (e) {
-        console.error(e);
+        Notify.error('Failed to load trip details');
     }
 }
 
@@ -78,7 +78,7 @@ async function loadItinerary() {
             window.locationManager.renderStopsOnMap(stops);
         }
     } catch (e) {
-        console.error('Failed to load itinerary', e);
+        Notify.error('Failed to load itinerary');
     }
 }
 
@@ -285,21 +285,23 @@ async function loadPacking() {
         const percent = stats.packing.percent || 0;
         document.getElementById('packing-percent').textContent = `${percent}% Packed`;
         document.getElementById('packing-progress-bar').style.width = `${percent}%`;
-    } catch (e) { console.error(e); }
+    } catch (e) { Notify.error('Failed to load packing list'); }
 }
 
 async function handlePackingSubmit(e) {
     e.preventDefault();
     const input = document.getElementById('packing-input');
+    Loading.show('Adding item...');
     try {
-        await fetch(`/api/trips/${tripId}/packing`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ item_name: input.value })
-        });
+        await API.post(`/trips/${tripId}/packing`, { item_name: input.value });
+        Notify.success('Item added');
         input.value = '';
         loadPacking();
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        Notify.error('Failed to add item');
+    } finally {
+        Loading.hide();
+    }
 }
 
 async function togglePacking(id, isPacked) {
@@ -352,7 +354,7 @@ async function loadBudget() {
         document.getElementById('budget-remaining').textContent = `₹${s.remaining.toLocaleString('en-IN')}`;
 
         renderBudgetCharts(s);
-    } catch (e) { console.error('loadBudget error:', e); }
+    } catch (e) { Notify.error('Failed to load budget data'); }
 }
 
 let budgetPieChart = null;
@@ -480,40 +482,40 @@ async function loadNotes() {
                 </div>
             </div>
         `).join('');
-    } catch (e) { console.error('loadNotes error:', e); }
+    } catch (e) { Notify.error('Failed to load notes'); }
 }
 
 async function handleNoteSubmit(e) {
     e.preventDefault();
+    Loading.show('Saving note...');
     const data = {
         title: document.getElementById('note-title').value,
         content: document.getElementById('note-content').value
     };
     try {
-        const res = await fetch(`/api/trips/${tripId}/notes`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-        if (res.ok) {
-            closeModal('note-modal');
-            loadNotes();
-        } else {
-            const err = await res.json().catch(() => ({}));
-            alert('Failed to save note: ' + (err.error || res.statusText));
-        }
+        await API.post(`/trips/${tripId}/notes`, data);
+        Notify.success('Note saved');
+        closeModal('note-modal');
+        loadNotes();
     } catch (e) {
-        console.error('handleNoteSubmit error:', e);
-        alert('Network error saving note. Please try again.');
+        Notify.error('Failed to save note. Please try again.');
+    } finally {
+        Loading.hide();
     }
 }
 
 async function deleteNote(id) {
     if (!confirm('Delete this note?')) return;
+    Loading.show('Deleting...');
     try {
-        await fetch(`/api/trips/${tripId}/notes/${id}`, { method: 'DELETE' });
+        await API.delete(`/trips/${tripId}/notes/${id}`);
+        Notify.success('Note deleted');
         loadNotes();
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        Notify.error('Failed to delete note');
+    } finally {
+        Loading.hide();
+    }
 }
 
 function openNoteModal() { openModal('note-modal'); }

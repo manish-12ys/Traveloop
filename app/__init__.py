@@ -40,7 +40,7 @@ def create_app(config_name=None):
     def load_user(user_id):
         """Load user by ID for Flask-Login"""
         from app.models.user import User
-        return User.query.get(int(user_id))
+        return db.session.get(User, int(user_id))
     
     @login_manager.unauthorized_handler
     def unauthorized():

@@ -12,7 +12,7 @@ class DashboardService:
     @staticmethod
     def get_user_profile(user_id):
         """Get user profile information"""
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             return None
         
