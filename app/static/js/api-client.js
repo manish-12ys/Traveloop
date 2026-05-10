@@ -5,17 +5,29 @@
 
 const apiClient = {
     baseURL: '/api/dashboard',
+
+    _getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    },
     
     /**
      * Make a fetch request with error handling
      */
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
-        const response = await fetch(url, {
-            headers: {
+        const method = (options.method || 'GET').toUpperCase();
+        const headers = {
                 'Content-Type': 'application/json',
                 ...options.headers,
-            },
+        };
+
+        if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+            headers['X-CSRFToken'] = this._getCsrfToken();
+        }
+
+        const response = await fetch(url, {
+            headers,
+            credentials: 'include',
             ...options,
         });
         

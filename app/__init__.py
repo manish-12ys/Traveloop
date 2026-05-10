@@ -4,6 +4,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from config import config
+import click
 import os
 
 # Initialize extensions
@@ -63,6 +64,33 @@ def create_app(config_name=None):
     def internal_server_error(e):
         from flask import render_template
         return render_template('errors/404.html'), 500 # Use 404 for now or create 500.html
+
+    @app.cli.command('create-admin')
+    @click.argument('username')
+    @click.argument('email')
+    @click.argument('password')
+    def create_admin(username, email, password):
+        """Create a new admin user or promote an existing user."""
+        from app.models.user import User
+
+        normalized_email = email.strip().lower()
+        user = User.query.filter(
+            (User.username == username) | (User.email == normalized_email)
+        ).first()
+
+        if user is None:
+            user = User(username=username.strip(), email=normalized_email, is_admin=True)
+            user.set_password(password)
+            db.session.add(user)
+            action = 'Created'
+        else:
+            user.is_admin = True
+            if password:
+                user.set_password(password)
+            action = 'Promoted'
+
+        db.session.commit()
+        click.echo(f'{action} admin user: {user.username} <{user.email}>')
     
     # Create tables
     with app.app_context():

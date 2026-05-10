@@ -31,6 +31,7 @@
                 <p class="text-gray-600 dark:text-gray-400 mt-1 mb-6">Use a real email so you can recover your account later.</p>
 
                 <form method="POST" action="{{ url_for('auth.signup') }}" class="space-y-5" data-loading-form>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div>
                         <label for="username" class="form-label">Username</label>
                         <input
