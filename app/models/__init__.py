@@ -2,20 +2,23 @@
 Models module for Traveloop
 
 Phase 1 includes basic User model setup.
-Additional models (Trip, Stop, Activity, etc.) will be added in Phase 3.
+Phase 2 includes Trip model for dashboard.
+Additional models (Stop, Activity, etc.) will be added in Phase 3.
 """
 
 from app.models.user import User
+from app.models.trip import Trip
 
-__all__ = ['User']
+__all__ = ['User', 'Trip']
 
 
 # Phase 1 Models
-# User model will be implemented in Phase 2 - Authentication
+# - User model (Authentication)
 
+# Phase 2 Models
+# - Trip model (Dashboard)
 
 # Phase 3 Models (To be implemented)
-# - Trip model
 # - Stop model
 # - Activity model
 # - Budget model
